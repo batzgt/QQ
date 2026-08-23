@@ -40,7 +40,6 @@ _DEFAULT_BUNDLE_REF = "default"
 
 
 def get_default_model_bundle(_bundles):
-  """Legacy compatibility hook: stock default is preinstalled, not a manifest bundle."""
   return None
 
 
@@ -239,10 +238,13 @@ def select_default_model(params: Params = None) -> None:
 
 def seed_default_bundle_if_unset(params: Params = None) -> None:
   params = Params() if params is None else params
-  if params.get(_ACTIVE_BUNDLE_KEY) or params.get(_DOWNLOAD_INDEX_KEY) is not None:
+  if params.get(_ACTIVE_BUNDLE_KEY):
     return
+  queued_download = params.get(_DOWNLOAD_INDEX_KEY)
   try:
     select_default_model(params)
+    if queued_download is not None:
+      params.put(_DOWNLOAD_INDEX_KEY, queued_download)
     cloudlog.warning("default_model: seeded Default (CD210) as active bundle")
   except Exception as e:
     cloudlog.exception(f"default_model: failed to seed default bundle: {e}")

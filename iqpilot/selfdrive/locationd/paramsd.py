@@ -8,7 +8,6 @@ from iqpilot.common.issue_debug import log_issue_limited
 from iqpilot.common.params import Params
 from iqpilot.common.realtime import DT_MDL
 from iqpilot.selfdrive.locationd.models.car_kf import CarKalman, ObservationKind, States
-from iqpilot.selfdrive.locationd.models.constants import GENERATED_DIR
 from iqpilot.selfdrive.locationd.helpers import PoseCalibrator, Pose
 from iqpilot.common.swaglog import cloudlog
 
@@ -26,7 +25,7 @@ LOW_ACTIVE_SPEED = 10.0
 
 class VehicleParamsEstimator:
   def __init__(self, CP: car.CarParams, steer_ratio: float, stiffness_factor: float, angle_offset: float, P_initial: np.ndarray | None = None):
-    self.kf = CarKalman(GENERATED_DIR)
+    self.kf = CarKalman()
 
     self.x_initial = CarKalman.initial_x.copy()
     self.x_initial[States.STEER_RATIO] = steer_ratio

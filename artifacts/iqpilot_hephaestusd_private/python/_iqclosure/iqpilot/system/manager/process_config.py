@@ -195,7 +195,7 @@ procs = [
 procs += [
   # Models
   BundleProcess("models_manager", "iqpilot_model_selector_private", "iqpilot_private.models.manager", and_(only_offroad, not_low_power)),
-  NativeProcess("iqmodeld", "iqpilot/selfdrive/iqmodeld", ["./iqmodeld"], and_(only_onroad, is_tinygrad_model)),
+  NativeProcess("iqmodeld", "iqpilot/selfdrive/iqmodeld", ["./iqmodeld"], and_(only_onroad, is_tinygrad_model), restart_if_crash=True),
 
   BundleProcess("backup_manager_k3", "iqpilot_hephaestusd_private", "iqpilot_private.konn3kt.backups.backup_orchestrator",
                 and_(only_offroad, hephaestus_ready_shim, not_low_power)),

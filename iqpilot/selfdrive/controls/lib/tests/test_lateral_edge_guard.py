@@ -9,12 +9,16 @@ from iqpilot.common.realtime import DT_MDL
 from iqpilot.selfdrive.controls.lib.desire_helper import DesireHelper
 from iqpilot.selfdrive.controls.lib.helpers.lane_change import AutoLaneChangeMode
 from iqpilot.selfdrive.controls.lib.helpers.lateral_edge_guard import (
+  ADJACENT_LANE_LINE_PROB,
   BLOCK_DEBOUNCE_S,
   CLEAR_DEBOUNCE_S,
   MAX_VALID_ROAD_EDGE_STD_M,
   MIN_ACTIVE_SPEED_MPS,
   REQUIRED_ROAD_EDGE_DISTANCE_M,
   UNAVAILABLE_HOLD_S,
+  LANE_CENTER_OFFSET_M,
+  MAX_MEASURED_LANE_WIDTH_M,
+  MIN_MEASURED_LANE_WIDTH_M,
   LateralEdgeGuard,
   RoadEdgeDataState,
   evaluate_road_edge,
@@ -33,6 +37,25 @@ class Edge:
 class ModelData:
   roadEdges: list[Edge]
   roadEdgeStds: list[float]
+
+
+@dataclass
+class LaneModelData:
+  roadEdges: list[Edge]
+  roadEdgeStds: list[float]
+  laneLines: list[Edge]
+  laneLineProbs: list[float]
+
+
+def lane_model(left_distance_m: float = 4.0, outer_prob: float = 0.0,
+               ego_width_m: float = 3.5, ego_prob: float = 0.9) -> LaneModelData:
+  xs = [5.0, 20.0, 40.0]
+  base = edge_model(left_distance_m, left_distance_m)
+  half = ego_width_m / 2.0
+  lines = [Edge(xs, [-(half + 3.0)] * 3), Edge(xs, [-half] * 3),
+           Edge(xs, [half] * 3), Edge(xs, [half + 3.0] * 3)]
+  return LaneModelData(base.roadEdges, base.roadEdgeStds, lines,
+                       [outer_prob, ego_prob, ego_prob, outer_prob])
 
 
 class CarState:
@@ -86,11 +109,15 @@ def test_unavailable_and_invalid_are_distinct() -> None:
   assert invalid.should_block is None
 
 
-def test_two_sigma_bound_uses_std_in_metres() -> None:
+def test_one_sigma_bound_uses_std_in_metres() -> None:
   measurement = evaluate_road_edge(edge_model(5.0).roadEdges[0], 0.2, log.LaneChangeDirection.left)
   assert measurement.lateral_distance_m == 5.0
-  assert measurement.conservative_distance_m == 4.6
-  assert measurement.should_block is True
+  assert measurement.conservative_distance_m == 4.8
+  assert measurement.should_block is False
+
+  blocking = evaluate_road_edge(edge_model(4.5).roadEdges[0], 0.2, log.LaneChangeDirection.left)
+  assert blocking.conservative_distance_m == 4.3
+  assert blocking.should_block is True
 
 
 def test_distance_threshold_on_either_side() -> None:
@@ -193,3 +220,36 @@ def test_published_edge_block_maps_to_distinct_event_and_alert() -> None:
   alert = EVENTS_IQ[event_name][ET.WARNING]
   assert alert.alert_text_1 == "Lane Change Blocked"
   assert alert.alert_text_2 == "Road edge detected"
+
+
+def test_visible_outer_lane_line_overrides_edge_block() -> None:
+  blocking = lane_model(4.0, outer_prob=0.0)
+  guard = LateralEdgeGuard()
+  update_for(guard, blocking, BLOCK_DEBOUNCE_S)
+  assert guard.block_for_direction(log.LaneChangeDirection.left) != custom.IQLateralEdgeBlock.none
+
+  guard = LateralEdgeGuard()
+  update_for(guard, lane_model(4.0, outer_prob=ADJACENT_LANE_LINE_PROB + 0.2), BLOCK_DEBOUNCE_S * 4)
+  assert guard.block_for_direction(log.LaneChangeDirection.left) == custom.IQLateralEdgeBlock.none
+
+
+def test_outer_lane_line_below_threshold_still_blocks() -> None:
+  guard = LateralEdgeGuard()
+  update_for(guard, lane_model(4.0, outer_prob=ADJACENT_LANE_LINE_PROB - 0.1), BLOCK_DEBOUNCE_S)
+  assert guard.block_for_direction(log.LaneChangeDirection.left) != custom.IQLateralEdgeBlock.none
+
+
+def test_narrow_measured_lane_relaxes_required_distance() -> None:
+  narrow = evaluate_road_edge(edge_model(4.3).roadEdges[0], 0.0, log.LaneChangeDirection.left, 3.0)
+  wide = evaluate_road_edge(edge_model(4.3).roadEdges[0], 0.0, log.LaneChangeDirection.left, LANE_CENTER_OFFSET_M)
+  assert narrow.should_block is False
+  assert wide.should_block is True
+
+
+def test_measured_lane_width_is_clamped_and_falls_back() -> None:
+  assert LateralEdgeGuard._measured_lane_width(None) == LANE_CENTER_OFFSET_M
+  assert LateralEdgeGuard._measured_lane_width(edge_model(4.0)) == LANE_CENTER_OFFSET_M
+  assert LateralEdgeGuard._measured_lane_width(lane_model(4.0, ego_prob=0.1)) == LANE_CENTER_OFFSET_M
+  assert LateralEdgeGuard._measured_lane_width(lane_model(4.0, ego_width_m=9.0)) == MAX_MEASURED_LANE_WIDTH_M
+  assert LateralEdgeGuard._measured_lane_width(lane_model(4.0, ego_width_m=0.5)) == MIN_MEASURED_LANE_WIDTH_M
+  assert LateralEdgeGuard._measured_lane_width(lane_model(4.0, ego_width_m=3.2)) == 3.2

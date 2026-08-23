@@ -58,7 +58,7 @@ class CarController(CarControllerBase):
     # Longitudinal control
     if self.CP.openpilotLongitudinalControl:
       if self.frame % 4 == 0:
-        state = 13 if CC.cruiseControl.cancel or CS.das_accCancel else 4  # 4=ACC_ON, 13=ACC_CANCEL_GENERIC_SILENT
+        state = 13 if CC.cruiseControl.cancel else 4  # 4=ACC_ON, 13=ACC_CANCEL_GENERIC_SILENT
         accel = float(np.clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
         if not CC.longActive:
           accel = 0.
@@ -70,7 +70,7 @@ class CarController(CarControllerBase):
                                                                     comfort_mode=bool(getattr(CC, "longComfortMode", False)),
                                                                     stopping=getattr(actuators, "longControlState", None) ==
                                                                     structs.CarControl.Actuators.LongControlState.stopping,
-                                                                    cancel=CC.cruiseControl.cancel or CS.das_accCancel))
+                                                                    cancel=CC.cruiseControl.cancel))
 
     else:
       # Increment counter so cancel is prioritized even without openpilot longitudinal

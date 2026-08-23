@@ -15,7 +15,7 @@ from iqpilot.common.swaglog import cloudlog
 from iqpilot.selfdrive.locationd.calibration_helpers import get_calibrated_rpy
 from iqpilot.selfdrive.locationd.helpers import rotate_std
 from iqpilot.selfdrive.locationd.models.pose_kf import PoseKalman, States
-from iqpilot.selfdrive.locationd.models.constants import ObservationKind, GENERATED_DIR
+from iqpilot.selfdrive.locationd.models.constants import ObservationKind
 
 ACCEL_SANITY_CHECK = 100.0  # m/s^2
 ROTATION_SANITY_CHECK = 10.0  # rad/s
@@ -51,7 +51,7 @@ class HandleLogResult(Enum):
 
 class LocationEstimator:
   def __init__(self, debug: bool):
-    self.kf = PoseKalman(GENERATED_DIR, MAX_FILTER_REWIND_TIME)
+    self.kf = PoseKalman(MAX_FILTER_REWIND_TIME)
 
     self.debug = debug
 

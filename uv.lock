@@ -601,7 +601,6 @@ dependencies = [
     { name = "pyzmq" },
     { name = "qrcode" },
     { name = "raylib" },
-    { name = "rednose" },
     { name = "requests" },
     { name = "scons" },
     { name = "sentry-sdk" },
@@ -708,7 +707,6 @@ requires-dist = [
     { name = "pyzmq" },
     { name = "qrcode" },
     { name = "raylib", specifier = ">5.5.0.3" },
-    { name = "rednose", directory = "artifacts/package_sources/rednose" },
     { name = "requests" },
     { name = "ruff", marker = "extra == 'testing'" },
     { name = "scons" },
@@ -3955,25 +3953,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/5c/fa/c25087b39d2db2d833a52b4056ae62db74e64b4be677f816e0b368e65453/raylib-5.5.0.4-cp312-cp312-win32.whl", hash = "sha256:e09f395035484337776c90e6c9955c5876b988db7e13168dcadb6ed11974f8ee", size = 1457266, upload-time = "2025-12-11T15:27:43.798Z" },
     { url = "https://files.pythonhosted.org/packages/2c/66/a307e61c953ace906ba68ba1174ed8f1e90e68d5fc3e3af9fb7dc46d68d1/raylib-5.5.0.4-cp312-cp312-win_amd64.whl", hash = "sha256:553043a050a31f2ef072f26d3a70373f838a04733f7c5b26a4e9ee3f8caf06ec", size = 1708354, upload-time = "2025-12-11T15:27:45.979Z" },
 ]
-
-[[package]]
-name = "rednose"
-version = "0.0.1"
-source = { directory = "artifacts/package_sources/rednose" }
-dependencies = [
-    { name = "cffi" },
-    { name = "numpy" },
-    { name = "sympy" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "cffi" },
-    { name = "numpy" },
-    { name = "scipy", marker = "extra == 'dev'" },
-    { name = "sympy" },
-]
-provides-extras = ["dev"]
 
 [[package]]
 name = "requests"

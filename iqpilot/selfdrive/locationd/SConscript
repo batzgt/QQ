@@ -1,21 +1,5 @@
-Import('env', 'rednose')
+Import('env', 'envCython')
 
-# build ekf models
-rednose_gen_dir = 'models/generated'
-rednose_gen_deps = [
-  "models/constants.py",
-]
-pose_ekf = env.RednoseCompileFilter(
-  target='pose',
-  filter_gen_script='models/pose_kf.py',
-  output_dir=rednose_gen_dir,
-  extra_gen_artifacts=[],
-  gen_script_deps=rednose_gen_deps,
-)
-car_ekf = env.RednoseCompileFilter(
-  target='car',
-  filter_gen_script='models/car_kf.py',
-  output_dir=rednose_gen_dir,
-  extra_gen_artifacts=[],
-  gen_script_deps=rednose_gen_deps,
-)
+native_kernel = env.StaticLibrary("../state_estimation/native_kernels", ["../state_estimation/native_kernels.cc"])
+native_binding_env = envCython.Clone(CYTHONFLAGS=["--cplus"])
+native_binding_env.Program("../state_estimation/native_binding_pyx.so", ["../state_estimation/native_binding_pyx.pyx"], LIBS=[native_kernel] + envCython["LIBS"])

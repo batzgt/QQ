@@ -35,7 +35,8 @@ class IQCarState:
       prev_infotainment_3_finger_press = self.infotainment_3_finger_press
       self.infotainment_3_finger_press = int(cp_adas.vl["UI_status2"]["UI_activeTouchPoints"])
 
-      ret.buttonEvents = [*create_button_events(self.infotainment_3_finger_press, prev_infotainment_3_finger_press,
+      ret.buttonEvents = [*ret.buttonEvents,
+                          *create_button_events(self.infotainment_3_finger_press, prev_infotainment_3_finger_press,
                                                 {3: ButtonType.lkas})]
 
       bms_soc_ui = float(cp_adas.vl["ID292BMS_SOC"].get("SOCUI292", 0.0))

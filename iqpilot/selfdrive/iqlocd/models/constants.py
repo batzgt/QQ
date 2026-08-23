@@ -1,7 +1,3 @@
-import os
-
-GENERATED_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'generated'))
-
 class ObservationKind:
   UNKNOWN = 0
   NO_OBSERVATION = 1

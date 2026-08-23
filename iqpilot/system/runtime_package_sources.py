@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 
-PACKAGE_NAMES = ("msgq", "iqdbc", "panda", "rednose", "teleoprtc", "tinygrad")
+PACKAGE_NAMES = ("msgq", "iqdbc", "panda", "teleoprtc", "tinygrad")
 root = Path(sys.argv[1]).resolve()
 text = (root / "pyproject.toml").read_text()
 for name in PACKAGE_NAMES:

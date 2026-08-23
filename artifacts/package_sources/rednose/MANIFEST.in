@@ -1,4 +1,0 @@
-include SConstruct
-graft rednose
-graft site_scons
-global-exclude __pycache__ *.pyc *.o *.os *.d

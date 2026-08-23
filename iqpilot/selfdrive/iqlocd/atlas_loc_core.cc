@@ -7,7 +7,6 @@
 #include <cmath>
 #include <vector>
 
-using namespace EKFS;
 using namespace Eigen;
 
 ExitHandler do_exit;

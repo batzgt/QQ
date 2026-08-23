@@ -13,7 +13,7 @@ dependencies = [
   "sounddevice",  # micd + soundd
   "pyserial",     # pigeond + qcomgpsd
   "requests",     # many one-off uses
-  "sympy",        # rednose + friends
+  "sympy",
   "crcmod-plus",  # cars + qcomgpsd
   "tqdm",         # cars (fw_versions.py) on start + many one-off uses
 
@@ -27,7 +27,6 @@ dependencies = [
   "msgq",
   "iqdbc",
   "panda",
-  "rednose",
   "teleoprtc",
   "tinygrad",
 
@@ -256,6 +255,5 @@ not-subscriptable = "ignore"
 msgq = { path = "artifacts/package_sources/msgq" }
 iqdbc = { path = "artifacts/package_sources/iqdbc" }
 panda = { path = "artifacts/package_sources/panda" }
-rednose = { path = "artifacts/package_sources/rednose" }
 teleoprtc = { path = "artifacts/package_sources/teleoprtc" }
 tinygrad = { path = "artifacts/package_sources/tinygrad" }

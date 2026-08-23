@@ -9,7 +9,6 @@ import numpy as np
 import iqdbc
 import msgq as msgq_package
 import panda
-import rednose as rednose_package
 import tinygrad
 
 import SCons.Errors
@@ -110,8 +109,6 @@ env = Environment(
     iqdbc.INCLUDE_PATH,
     msgq_package.INCLUDE_PATH,
     panda.INCLUDE_PATH,
-    rednose_package.INCLUDE_PATH,
-    os.path.dirname(rednose_package.__file__),
     "#iqpilot/cereal/gen/cpp",
     "#iqpilot/third_party",
     "#iqpilot/third_party/json11",
@@ -132,9 +129,8 @@ env = Environment(
   RPATH=[],
   CYTHONCFILESUFFIX=".cpp",
   COMPILATIONDB_USE_ABSPATH=True,
-  REDNOSE_ROOT=rednose_package.INCLUDE_PATH,
-  tools=["default", "cython", "compilation_db", "rednose_filter"],
-  toolpath=["#iqpilot/tools/scons/site_tools", rednose_package.SCONS_TOOL_PATH],
+  tools=["default", "cython", "compilation_db"],
+  toolpath=["#iqpilot/tools/scons/site_tools"],
 )
 
 # Arch-specific flags and paths
@@ -248,9 +244,6 @@ SConscript(['iqpilot/cereal/SConscript'])
 Import('socketmaster')
 messaging = [socketmaster, msgq, 'capnp', 'kj',]
 Export('messaging')
-
-rednose = File(rednose_package.LIB_PATH)
-Export('rednose')
 
 # Build system services
 SConscript([

@@ -46,9 +46,9 @@ sync_python_env() {
   fi
   VENV_SITE_PACKAGES="$("$DIR/.venv/bin/python3" -c 'import site; print(site.getsitepackages()[0])' 2>/dev/null || true)"
   PACKAGES_READY=0
-  if [ -d "$DIR/artifacts/package_runtime" ] && PYTHONPATH="$DIR/artifacts/package_runtime" /usr/local/venv/bin/python3 -c "import iqdbc, msgq, panda, rednose, teleoprtc, tinygrad" 2>/dev/null; then
+  if [ -d "$DIR/artifacts/package_runtime" ] && PYTHONPATH="$DIR/artifacts/package_runtime" /usr/local/venv/bin/python3 -c "import iqdbc, msgq, panda, teleoprtc, tinygrad" 2>/dev/null; then
     PACKAGES_READY=1
-  elif [ "$PACKAGE_LOCK_SHA" = "$INSTALLED_PACKAGE_LOCK_SHA" ] && "$DIR/.venv/bin/python3" -c "import iqdbc, msgq, panda, rednose, teleoprtc, tinygrad" 2>/dev/null \
+  elif [ "$PACKAGE_LOCK_SHA" = "$INSTALLED_PACKAGE_LOCK_SHA" ] && "$DIR/.venv/bin/python3" -c "import iqdbc, msgq, panda, teleoprtc, tinygrad" 2>/dev/null \
       && "$DIR/.venv/bin/python3" "$DIR/iqpilot/system/runtime_packages_verify.py"; then
     # a top-level import passes on a partially extracted install (lazy backends),
     # so readiness also requires every wheel RECORD file to exist on disk
@@ -74,8 +74,7 @@ sync_python_env() {
     fi
     PACKAGE_BUILD_PYTHONPATH="$BASE_SITE_PACKAGES:$VENV_SITE_PACKAGES"
     # The base AGNOS venv ships Eigen as a Python package instead of under
-    # /usr/include. rednose includes <eigen3/Eigen/Dense>, so source-package
-    # builds need the package's install directory on the compiler include path.
+    # /usr/include, so source-package builds need its install directory on the compiler include path.
     # Resolve it through Python rather than pinning the Python minor version.
     EIGEN_INCLUDE_ROOT="$(/usr/local/venv/bin/python3 -c \
       'from pathlib import Path; import eigen; root = Path(eigen.__file__).resolve().parent / "install"; assert (root / "eigen3/Eigen/Dense").is_file(); print(root)' \

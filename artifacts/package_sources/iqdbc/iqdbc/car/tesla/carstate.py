@@ -1,6 +1,6 @@
 import copy
 from iqdbc.can import CANDefine, CANParser
-from iqdbc.car import Bus, create_button_events, structs
+from iqdbc.car import Bus, structs
 from iqdbc.car.common.conversions import Conversions as CV
 from iqdbc.car.interfaces import CarStateBase
 from iqdbc.car.tesla import TESLA_BLINKERS
@@ -9,8 +9,6 @@ from iqdbc.car.tesla.values import DBC, CANBUS, GEAR_MAP, STEER_THRESHOLD, Tesla
 from iqdbc.lvbs.car.tesla.iq_carstate import IQCarState
 from iqdbc.lvbs.car.tesla.values import TeslaFlagsIQ, TeslaSafetyFlagsIQ
 from iqpilot.common.params import Params
-
-ButtonType = structs.CarState.ButtonEvent.Type
 
 
 def stock_autosteer_invalid(CP, CP_IQ, autopilot_state: int) -> bool:
@@ -33,9 +31,6 @@ class CarState(CarStateBase, IQCarState):
     self.cruise_enabled_prev = False
 
     self.hands_on_level = 0
-    self.acc_state_last = 0
-    self.das_accCancel = False
-    self.das_cancel_last = True
     self.das_control = None
     self.das_body_controls_dat = b""
     self._odometer_store = iq_lvbs_alc.create_vehicle_odometer_store(CP, Params())
@@ -99,24 +94,11 @@ class CarState(CarStateBase, IQCarState):
     # Cruise state
     cruise_state = self.can_define.dv["DI_state"]["DI_cruiseState"].get(int(cp_party.vl["DI_state"]["DI_cruiseState"]), None)
     speed_units = self.can_define.dv["DI_state"]["DI_speedUnits"].get(int(cp_party.vl["DI_state"]["DI_speedUnits"]), None)
-    acc_state = cp_ap_party.vl["DAS_control"]["DAS_accState"]
 
     summon_state = self.can_define.dv["DI_state"]["DI_autoparkState"].get(int(cp_party.vl["DI_state"]["DI_autoparkState"]), None)
     cruise_enabled = cruise_state in ("ENABLED", "STANDSTILL", "OVERRIDE", "PRE_FAULT", "PRE_CANCEL")
     self.cruise_override = cruise_state in ("OVERRIDE")
     self.update_summon_state(summon_state, cruise_enabled)
-
-    # Respect all stock DAS cancel states, not just ACC_CANCEL_GENERIC_SILENT(13).
-    # ELDA/ELK triggers ACC_CANCEL_GENERIC(0) which must also be forwarded.
-    # The stock AP is isolated from the party bus while the relay is closed, so its accState
-    # free-runs between ACC_ON and ACC_CANCEL_GENERIC. Only a rising edge while ACC is engaged
-    # is a real cancel; level-forwarding it pins DI_cruiseState to UNAVAILABLE and blocks engaging.
-    das_cancel = acc_state in (0, 1, 2, 12, 13, 14, 15)
-    if not cruise_enabled:
-      self.das_accCancel = False
-    elif das_cancel and not self.das_cancel_last:
-      self.das_accCancel = True
-    self.das_cancel_last = das_cancel
 
     # Match panda safety cruise engaged logic
     ret.cruiseState.enabled = cruise_enabled and not self.summon
@@ -129,9 +111,6 @@ class CarState(CarStateBase, IQCarState):
     ret.cruiseState.standstill = False  # This needs to be false, since we can resume from stop without sending anything special
     ret.standstill = cp_party.vl["ESP_B"]["ESP_vehicleStandstillSts"] == 1
     ret.accFaulted = cruise_state == "FAULT"
-
-    ret.buttonEvents = [*create_button_events(acc_state, self.acc_state_last, {0: ButtonType.cancel, 13: ButtonType.cancel})]
-    self.acc_state_last = acc_state
 
     # Gear
     ret.gearShifter = GEAR_MAP[self.can_define.dv["DI_systemStatus"]["DI_gear"].get(int(cp_party.vl["DI_systemStatus"]["DI_gear"]), "DI_GEAR_INVALID")]

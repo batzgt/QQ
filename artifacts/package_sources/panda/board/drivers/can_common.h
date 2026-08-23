@@ -307,7 +307,7 @@ void ignition_can_hook(CANPacket_t *msg) {
       vw_meb_gateway_out_of_p = (fahrstufe >= 6) && (fahrstufe <= 14);
     }
 
-    if ((msg->addr == 0x13DU) && (len == 32)) {
+    if ((msg->addr == 0xC0U) && (len == 32)) {
       vw_meb_seen = true;
     }
 

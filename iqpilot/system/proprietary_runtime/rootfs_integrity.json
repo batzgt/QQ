@@ -39,15 +39,15 @@
       "mode": 420,
       "path": "/usr/lib/systemd/system/hephaestusd.service",
       "relative_to": "absolute",
-      "sha256": "4ae9a2ad76345019633c2fcf9698f48089576c9b7c009078a732e2a7c36006e4",
-      "size": 1418
+      "sha256": "3b70e8873c7eb813e70798300b76c153dddda9947c1301cbba7e103962461fa2",
+      "size": 1627
     },
     {
       "mode": 420,
       "path": "/usr/lib/systemd/system/ble-transportd.service",
       "relative_to": "absolute",
-      "sha256": "dfb9e18320e264c847efc01a2d58ee1850a83c49ed614527eafa7634de4ac51a",
-      "size": 1500
+      "sha256": "6b5bf61ebfebffe3d125bb766c13c391b83e8feda04b89f47de2725c6fe186e3",
+      "size": 1907
     }
   ]
 }

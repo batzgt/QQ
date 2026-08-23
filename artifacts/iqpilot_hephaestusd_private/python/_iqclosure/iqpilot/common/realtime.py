@@ -41,6 +41,12 @@ def config_realtime_process(cores: int | list[int], priority: int) -> None:
   set_core_affinity(c)
 
 
+def config_background_thread() -> None:
+  if sys.platform == 'linux' and not PC:
+    os.sched_setscheduler(0, os.SCHED_OTHER, os.sched_param(0))
+    set_core_affinity(list(range(os.cpu_count() or 1)))
+
+
 def lock_memory() -> None:
   """mlockall this process so memory reclaim/compaction can't stall it. RT control
   procs only (locking ui/modeld would worsen pressure). Best-effort."""

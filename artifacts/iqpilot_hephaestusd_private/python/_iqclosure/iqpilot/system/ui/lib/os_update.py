@@ -42,10 +42,17 @@ def required_agnos_version(install_path: str) -> str:
   return ""
 
 
+def _hardware_dir(install_path: str) -> str:
+  nested = os.path.join(install_path, "iqpilot", "system", "hardware", "tici")
+  if os.path.isdir(nested):
+    return nested
+  return os.path.join(install_path, "system", "hardware", "tici")
+
+
 def agnos_manifest_path(install_path: str, device_type: str) -> str:
   # comma 3 (tici) uses a different AGNOS manifest than comma 3x (tizi) / comma 4 (mici).
   fname = "agnos_tici_15_1.json" if device_type == "tici" else "agnos.json"
-  return os.path.join(install_path, "system", "hardware", "tici", fname)
+  return os.path.join(_hardware_dir(install_path), fname)
 
 
 def os_update_needed(install_path: str) -> tuple[bool, str, str]:
@@ -64,7 +71,7 @@ def run_agnos_update(install_path: str, device_type: str, progress_cb: ProgressC
   via progress_cb(percent, note). Returns True on success. The device must be
   rebooted by the caller afterward for the new slot to take effect."""
   manifest = agnos_manifest_path(install_path, device_type)
-  agnos_py = os.path.join(install_path, "system", "hardware", "tici", "agnos.py")
+  agnos_py = os.path.join(_hardware_dir(install_path), "agnos.py")
   if not os.path.isfile(manifest) or not os.path.isfile(agnos_py):
     progress_cb(0, "manifest_missing")
     return False

@@ -33,8 +33,13 @@ def get_version(path: str = BASEDIR) -> str:
 
 
 def get_release_notes(path: str = BASEDIR) -> str:
-  with open(os.path.join(path, "docs", "CHANGELOG.md")) as f:
-    return f.read().split('\n\n', 1)[0]
+  for rel in (("iqpilot", "docs", "CHANGELOG.md"), ("docs", "CHANGELOG.md")):
+    try:
+      with open(os.path.join(path, *rel)) as f:
+        return f.read().split('\n\n', 1)[0]
+    except OSError:
+      continue
+  return ""
 
 
 @cache
