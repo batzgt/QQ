@@ -398,6 +398,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"OfflineRoutingOnly", {PERSISTENT, BOOL, "0"}},
     {"OfflineRoutingHost", {PERSISTENT, STRING, "http://127.0.0.1:8002"}},
     {"EnableCurvatureController", {PERSISTENT, BOOL, "0"}},
+    {"EnableSmoothSteer", {PERSISTENT, BOOL, "0"}},
     {"EnableSpeedLimitControl", {PERSISTENT, BOOL, "0"}},
     {"MapCurveSpeedController", {PERSISTENT, BOOL, "0"}},
     {"VisionCurveSpeedController", {PERSISTENT, BOOL, "0"}},

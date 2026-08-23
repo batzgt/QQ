@@ -41,6 +41,12 @@ def config_realtime_process(cores: int | list[int], priority: int) -> None:
   set_core_affinity(c)
 
 
+def config_background_thread() -> None:
+  if sys.platform == 'linux' and not PC:
+    os.sched_setscheduler(0, os.SCHED_OTHER, os.sched_param(0))
+    set_core_affinity(list(range(os.cpu_count() or 1)))
+
+
 def lock_memory() -> None:
   """mlockall this process so memory reclaim/compaction can't stall it. RT control
   procs only (locking ui/modeld would worsen pressure). Best-effort."""
@@ -76,6 +82,13 @@ class Ratekeeper:
     self.avg_dt = MovingAverage(100)
     self.avg_dt.add_value(self._interval)
 
+  def reset(self) -> None:
+    self._remaining = 0.0
+    self._last_monitor_time = -1.
+    self._next_frame_time = -1.
+    self.avg_dt = MovingAverage(100)
+    self.avg_dt.add_value(self._interval)
+
   @property
   def frame(self) -> int:
     return self._frame
@@ -83,6 +96,10 @@ class Ratekeeper:
   @property
   def remaining(self) -> float:
     return self._remaining
+
+  @property
+  def lag(self) -> float:
+    return max(0., -self._remaining)
 
   @property
   def lagging(self) -> bool:

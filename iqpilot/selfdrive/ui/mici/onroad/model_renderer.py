@@ -1,7 +1,7 @@
 import colorsys
 import numpy as np
 import pyray as rl
-from iqpilot.cereal import messaging, car
+from iqpilot.cereal import car
 from dataclasses import dataclass, field
 from iqpilot.common.params import Params
 from iqpilot.common.filter_simple import FirstOrderFilter
@@ -9,7 +9,7 @@ from iqpilot.selfdrive.locationd.calibrationd import HEIGHT_INIT
 from iqpilot.ui.onroad.hud_overlays import ChevronMetrics
 from iqpilot.ui.onroad.lead_confidence import driving_confidence
 from iqpilot.selfdrive.locationd.calibration_helpers import get_render_path_height
-from iqpilot.selfdrive.ui.ui_state import ui_state, UIStatus
+from iqpilot.selfdrive.ui.ui_state import ui_state, UIStatus, log_param_from_bytes
 from iqpilot.selfdrive.ui.mici.onroad import blend_colors
 from iqpilot.system.ui.lib.application import gui_app
 from iqpilot.system.ui.lib.shader_polygon import draw_polygon, Gradient
@@ -94,8 +94,7 @@ class ModelRenderer(Widget):
     )
 
     # Get longitudinal control setting from car parameters
-    if car_params := Params().get("CarParams"):
-      cp = messaging.log_from_bytes(car_params, car.CarParams)
+    if (cp := log_param_from_bytes(Params(), "CarParams", car.CarParams)) is not None:
       self._longitudinal_control = cp.openpilotLongitudinalControl
 
   def set_transform(self, transform: np.ndarray):

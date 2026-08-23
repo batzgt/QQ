@@ -450,6 +450,16 @@ msgstr "ล้างแคชของโมเดลที่เลือกแ
 msgid "Close"
 msgstr "ปิด"
 
+#: iqpilot/ui/layouts/settings/iq_panels.py:2245
+msgid ""
+"Close the steering loop on MEB and MQB Evo vehicles. IQ.Pilot corrects its "
+"steering command against the curvature the car is actually holding, "
+"instead of sending the planned curvature straight through."
+msgstr ""
+"ปิดลูปควบคุมพวงมาลัยในรถ MEB และ MQB Evo โดย IQ.Pilot "
+"จะแก้ไขคำสั่งบังคับเลี้ยวตามความโค้งที่รถทำได้จริง "
+"แทนการส่งความโค้งที่วางแผนไว้ออกไปตรง ๆ"
+
 #: openpilot/selfdrive/ui/layouts/routes.py:174
 #, python-brace-format
 msgid "Cloud"
@@ -579,6 +589,11 @@ msgstr "ครูซคอนโทรล"
 #, python-brace-format
 msgid "Current Version"
 msgstr "เวอร์ชันปัจจุบัน"
+
+#: iqpilot/ui/layouts/settings/iq_panels.py:2288
+#, python-brace-format
+msgid "Curvature Controller"
+msgstr "ตัวควบคุมความโค้ง"
 
 #: iqpilot/ui/layouts/settings/iq_panels.py:412
 #: iqpilot/ui/layouts/settings/iq_panels.py:449
@@ -1570,6 +1585,15 @@ msgstr "มองล่วงหน้าน้อยลง"
 msgid "Low-Speed Turn Planning"
 msgstr "การวางแผนเลี้ยวที่ความเร็วต่ำ"
 
+#: iqpilot/ui/layouts/settings/iq_panels.py:2249
+msgid ""
+"Low-pass the planned curvature before it reaches the rack on MEB and MQB "
+"Evo vehicles, which damps lateral wobble. On by default for these cars."
+msgstr ""
+"กรองความโค้งที่วางแผนไว้ด้วยตัวกรองความถี่ต่ำก่อนส่งไปยังแร็คพวงมาลัยในรถ "
+"MEB และ MQB Evo เพื่อลดอาการส่ายด้านข้าง "
+"เปิดใช้งานโดยค่าเริ่มต้นสำหรับรถเหล่านี้"
+
 #: iqpilot/ui/layouts/settings/iq_panels.py:2643
 #, python-brace-format
 msgid "MANUAL"
@@ -2557,6 +2581,11 @@ msgid ""
 msgstr ""
 "แสดงชื่อถนนปัจจุบันทับภาพขับขี่<br>ต้องติดตั้งข้อมูลแผนที่ออฟไลน์สำหรับภูมิภาคของคุณ"
 
+#: iqpilot/ui/layouts/settings/iq_panels.py:2300
+#, python-brace-format
+msgid "Smooth Steering"
+msgstr "การบังคับเลี้ยวที่นุ่มนวล"
+
 #: openpilot/selfdrive/ui/widgets/offroad_alerts.py:106
 #, python-brace-format
 msgid "Snooze Update"
@@ -3205,6 +3234,15 @@ msgstr "อัตโนมัติ"
 msgid "auto dark"
 msgstr "อัตโนมัติมืด"
 
+#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:324
+#, python-brace-format
+msgid ""
+"automatic\n"
+"updates"
+msgstr ""
+"อัปเดต\n"
+"อัตโนมัติ"
+
 #: openpilot/selfdrive/ui/mici/layouts/onboarding.py:405
 #, python-brace-format
 msgid "back"
@@ -3310,16 +3348,10 @@ msgstr "ค่อย ๆ เคลื่อนจากจุดหยุด (�
 msgid "cruise"
 msgstr "ครูซคอนโทรล"
 
-#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:339
+#: openpilot/selfdrive/ui/mici/layouts/settings/vehicle.py:83
 #, python-brace-format
-msgid "currently off"
-msgstr "ขณะนี้ปิดอยู่"
-
-#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:324
-#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:339
-#, python-brace-format
-msgid "currently on"
-msgstr "ขณะนี้เปิดอยู่"
+msgid "curvature controller"
+msgstr "ตัวควบคุมความโค้ง"
 
 #: openpilot/selfdrive/ui/mici/layouts/settings/settings.py:94
 #, python-brace-format
@@ -3359,16 +3391,6 @@ msgstr "อุปกรณ์"
 #, python-brace-format
 msgid "device ID"
 msgstr "รหัสอุปกรณ์"
-
-#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:324
-#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:338
-#, python-brace-format
-msgid ""
-"disable\n"
-"updates"
-msgstr ""
-"ปิด\n"
-"การอัปเดต"
 
 #: openpilot/selfdrive/ui/mici/layouts/settings/network/network_layout.py:56
 #: openpilot/selfdrive/ui/mici/layouts/settings/network/network_layout.py:190
@@ -3448,15 +3470,6 @@ msgstr "ไดนามิก"
 #, python-brace-format
 msgid "eSIM"
 msgstr "eSIM"
-
-#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:338
-#, python-brace-format
-msgid ""
-"enable\n"
-"updates"
-msgstr ""
-"เปิด\n"
-"การอัปเดต"
 
 #: openpilot/selfdrive/ui/mici/layouts/settings/dashcam.py:15
 #, python-brace-format
@@ -3749,6 +3762,7 @@ msgstr "ขยับพวงมาลัย"
 #: openpilot/selfdrive/ui/mici/layouts/settings/cruise.py:87
 #: openpilot/selfdrive/ui/mici/layouts/settings/steering.py:75
 #: openpilot/selfdrive/ui/mici/layouts/settings/vehicle.py:76
+#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:338
 #, python-brace-format
 msgid "off"
 msgstr "ปิด"
@@ -3757,6 +3771,12 @@ msgstr "ปิด"
 #, python-brace-format
 msgid "offline"
 msgstr "ออฟไลน์"
+
+#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:324
+#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:338
+#, python-brace-format
+msgid "on"
+msgstr "เปิด"
 
 #: openpilot/selfdrive/ui/mici/layouts/settings/device.py:146
 #, python-brace-format
@@ -4012,6 +4032,11 @@ msgstr ""
 #, python-brace-format
 msgid "slow"
 msgstr "ช้า"
+
+#: openpilot/selfdrive/ui/mici/layouts/settings/vehicle.py:84
+#, python-brace-format
+msgid "smooth steering"
+msgstr "การบังคับเลี้ยวที่นุ่มนวล"
 
 #: openpilot/selfdrive/ui/mici/layouts/settings/settings.py:107
 #, python-brace-format

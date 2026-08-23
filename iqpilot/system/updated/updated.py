@@ -76,6 +76,7 @@ def has_git_repo(path: str) -> bool:
 
 
 def display_commit_date(value: str) -> str:
+  value = value.strip()
   match = re.fullmatch(r"'?\d+ (\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) [+-]\d{4}'?", value)
   return match.group(1) if match else value.strip("'")
 
@@ -479,11 +480,28 @@ def prepare_environment() -> bool:
     return False
 
 
+def publish_running_version(params: Params) -> None:
+  try:
+    updater = Updater()
+    release_notes = parse_release_notes(BASEDIR)
+    params.put("UpdaterState", "idle")
+    params.put("UpdaterTargetBranch", updater.target_branch)
+    params.put("UpdaterCurrentDescription", updater.running_description)
+    params.put("UpdaterCurrentReleaseNotes", release_notes)
+    params.put("UpdaterNewDescription", updater.running_description)
+    params.put("UpdaterNewReleaseNotes", release_notes)
+    params.put_bool("UpdaterFetchAvailable", False)
+    params.put_bool("UpdateAvailable", False)
+  except Exception:
+    cloudlog.exception("updater: failed to publish running version")
+
+
 def main() -> None:
   params = Params()
 
   if params.get_bool("DisableUpdates"):
     cloudlog.warning("updates are disabled by the DisableUpdates param")
+    publish_running_version(params)
     exit(0)
 
   with open(LOCK_FILE, 'w') as ov_lock_fd:

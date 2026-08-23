@@ -7,6 +7,7 @@ from iqpilot.system.updated.updated import Updater, display_commit_date
 def test_display_commit_date():
   assert display_commit_date("'1786378834 2026-08-10 11:20:34 -0500'") == "2026-08-10 11:20:34"
   assert display_commit_date("1786378834 2026-08-10 11:20:34 -0500") == "2026-08-10 11:20:34"
+  assert display_commit_date("'1786378834 2026-08-10 11:20:34 -0500'\n") == "2026-08-10 11:20:34"
   assert display_commit_date("Jul 02") == "Jul 02"
 
 

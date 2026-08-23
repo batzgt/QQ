@@ -198,7 +198,8 @@ class MiciHomeLayout(Widget):
       # Expect "version / branch / commit / date"; be tolerant of other formats
       try:
         version, branch, commit, date = description.split(" / ")
-        return version, branch, commit, date
+        # version/date/branch share one 536px line: the brand prefix and clock time push the branch off screen
+        return version.removeprefix(HOME_TITLE_TEXT).strip() or version, branch, commit, date.split(" ")[0]
       except Exception:
         return None
 

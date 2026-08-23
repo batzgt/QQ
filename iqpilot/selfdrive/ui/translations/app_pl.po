@@ -455,6 +455,16 @@ msgstr "Wyczyścić pamięć wybranego modelu i pobrać go ponownie?"
 msgid "Close"
 msgstr "Zamknij"
 
+#: iqpilot/ui/layouts/settings/iq_panels.py:2245
+msgid ""
+"Close the steering loop on MEB and MQB Evo vehicles. IQ.Pilot corrects its "
+"steering command against the curvature the car is actually holding, "
+"instead of sending the planned curvature straight through."
+msgstr ""
+"Zamyka pętlę sterowania kierownicą w pojazdach MEB i MQB Evo. IQ.Pilot "
+"koryguje polecenie skrętu względem krzywizny, którą samochód faktycznie "
+"utrzymuje, zamiast wysyłać zaplanowaną krzywiznę wprost."
+
 #: openpilot/selfdrive/ui/layouts/routes.py:174
 #, python-brace-format
 msgid "Cloud"
@@ -586,6 +596,11 @@ msgstr "Tempomat"
 #, python-brace-format
 msgid "Current Version"
 msgstr "Bieżąca wersja"
+
+#: iqpilot/ui/layouts/settings/iq_panels.py:2288
+#, python-brace-format
+msgid "Curvature Controller"
+msgstr "Regulator krzywizny"
 
 #: iqpilot/ui/layouts/settings/iq_panels.py:412
 #: iqpilot/ui/layouts/settings/iq_panels.py:449
@@ -1597,6 +1612,15 @@ msgstr "wyprzedzenie w dół"
 msgid "Low-Speed Turn Planning"
 msgstr "Planowanie skrętu przy niskiej prędkości"
 
+#: iqpilot/ui/layouts/settings/iq_panels.py:2249
+msgid ""
+"Low-pass the planned curvature before it reaches the rack on MEB and MQB "
+"Evo vehicles, which damps lateral wobble. On by default for these cars."
+msgstr ""
+"Filtruje dolnoprzepustowo zaplanowaną krzywiznę, zanim trafi do "
+"przekładni, w pojazdach MEB i MQB Evo, co tłumi boczne kołysanie. "
+"Domyślnie włączone w tych autach."
+
 #: iqpilot/ui/layouts/settings/iq_panels.py:2643
 #, python-brace-format
 msgid "MANUAL"
@@ -2599,6 +2623,11 @@ msgstr ""
 "Pokazuje nazwę bieżącej drogi na widoku jazdy.<br>Wymaga zainstalowanych map"
 " offline dla Twojego regionu."
 
+#: iqpilot/ui/layouts/settings/iq_panels.py:2300
+#, python-brace-format
+msgid "Smooth Steering"
+msgstr "Płynne kierowanie"
+
 #: openpilot/selfdrive/ui/widgets/offroad_alerts.py:106
 #, python-brace-format
 msgid "Snooze Update"
@@ -3263,6 +3292,15 @@ msgstr "auto"
 msgid "auto dark"
 msgstr "auto ciemny"
 
+#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:324
+#, python-brace-format
+msgid ""
+"automatic\n"
+"updates"
+msgstr ""
+"automatyczne\n"
+"aktualizacje"
+
 #: openpilot/selfdrive/ui/mici/layouts/onboarding.py:405
 #, python-brace-format
 msgid "back"
@@ -3368,16 +3406,10 @@ msgstr "ruszanie z postoju (beta)"
 msgid "cruise"
 msgstr "tempomat"
 
-#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:339
+#: openpilot/selfdrive/ui/mici/layouts/settings/vehicle.py:83
 #, python-brace-format
-msgid "currently off"
-msgstr "obecnie wyłączone"
-
-#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:324
-#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:339
-#, python-brace-format
-msgid "currently on"
-msgstr "obecnie włączone"
+msgid "curvature controller"
+msgstr "regulator krzywizny"
 
 #: openpilot/selfdrive/ui/mici/layouts/settings/settings.py:94
 #, python-brace-format
@@ -3417,16 +3449,6 @@ msgstr "urządzenie"
 #, python-brace-format
 msgid "device ID"
 msgstr "ID urządzenia"
-
-#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:324
-#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:338
-#, python-brace-format
-msgid ""
-"disable\n"
-"updates"
-msgstr ""
-"wyłącz\n"
-"aktualizacje"
 
 #: openpilot/selfdrive/ui/mici/layouts/settings/network/network_layout.py:56
 #: openpilot/selfdrive/ui/mici/layouts/settings/network/network_layout.py:190
@@ -3506,15 +3528,6 @@ msgstr "dynamiczny"
 #, python-brace-format
 msgid "eSIM"
 msgstr "eSIM"
-
-#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:338
-#, python-brace-format
-msgid ""
-"enable\n"
-"updates"
-msgstr ""
-"włącz\n"
-"aktualizacje"
 
 #: openpilot/selfdrive/ui/mici/layouts/settings/dashcam.py:15
 #, python-brace-format
@@ -3807,6 +3820,7 @@ msgstr "poruszenie"
 #: openpilot/selfdrive/ui/mici/layouts/settings/cruise.py:87
 #: openpilot/selfdrive/ui/mici/layouts/settings/steering.py:75
 #: openpilot/selfdrive/ui/mici/layouts/settings/vehicle.py:76
+#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:338
 #, python-brace-format
 msgid "off"
 msgstr "wył."
@@ -3815,6 +3829,12 @@ msgstr "wył."
 #, python-brace-format
 msgid "offline"
 msgstr "offline"
+
+#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:324
+#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:338
+#, python-brace-format
+msgid "on"
+msgstr "wł."
 
 #: openpilot/selfdrive/ui/mici/layouts/settings/device.py:146
 #, python-brace-format
@@ -4070,6 +4090,11 @@ msgstr ""
 #, python-brace-format
 msgid "slow"
 msgstr "wolno"
+
+#: openpilot/selfdrive/ui/mici/layouts/settings/vehicle.py:84
+#, python-brace-format
+msgid "smooth steering"
+msgstr "płynne kierowanie"
 
 #: openpilot/selfdrive/ui/mici/layouts/settings/settings.py:107
 #, python-brace-format

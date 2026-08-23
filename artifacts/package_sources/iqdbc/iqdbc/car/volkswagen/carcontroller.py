@@ -366,8 +366,8 @@ class CarController(CarControllerBase):
 
           min_power = max(self.steering_power_last - self.CCP.STEERING_POWER_STEP, self.CCP.STEERING_POWER_MIN)
           max_power = min(self.steering_power_last + self.CCP.STEERING_POWER_STEP, self.CCP.STEERING_POWER_MAX)
-          target_power_driver = int(np.interp(CS.out.steeringTorque, [self.CCP.STEER_DRIVER_ALLOWANCE, self.CCP.STEER_DRIVER_MAX],
-                                                                     [self.CCP.STEERING_POWER_MAX, self.CCP.STEERING_POWER_MIN]))
+          target_power_driver = int(np.interp(abs(CS.out.steeringTorque), [self.CCP.STEER_DRIVER_ALLOWANCE, self.CCP.STEER_DRIVER_MAX],
+                                                                          [self.CCP.STEERING_POWER_MAX, self.CCP.STEERING_POWER_MIN]))
           target_power = int(np.interp(CS.out.vEgo, [0., 0.5], [self.CCP.STEERING_POWER_MIN, target_power_driver]))
           steering_power = min(max(target_power, min_power), max_power)
         else:
@@ -486,7 +486,7 @@ class CarController(CarControllerBase):
         acc_control = self.CCS.acc_control_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.enabled, long_override)
         acc_hold_type, self.acc_hold_ramp_counter = self.CCS.acc_hold_type(
           CS.out.cruiseState.available, CS.out.accFaulted, CC.enabled, starting, stopping,
-          CS.esp_hold_confirmation, long_override, self.acc_hold_type_last, self.acc_hold_ramp_counter)
+          CS.esp_hold_confirmation, CS.out.vEgo, self.acc_hold_type_last, self.acc_hold_ramp_counter)
         self.acc_hold_type_last = acc_hold_type
         can_sends.extend(self.CCS.create_acc_accel_control(
           self.packer_pt, self.CAN.pt, self.CP, CS.acc_type, CC.enabled,

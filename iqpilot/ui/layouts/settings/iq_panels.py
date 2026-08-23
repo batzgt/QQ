@@ -2242,6 +2242,14 @@ DESCRIPTIONS = {
   'iqMqbSteeringLockout': tr_noop(
     'Enable MQB steering lockout handling on Volkswagen MQB vehicles with low speed LKAS faults.'
   ),
+  'EnableCurvatureController': tr_noop(
+    'Close the steering loop on MEB and MQB Evo vehicles. IQ.Pilot corrects its steering command against '
+    'the curvature the car is actually holding, instead of sending the planned curvature straight through.'
+  ),
+  'EnableSmoothSteer': tr_noop(
+    'Low-pass the planned curvature before it reaches the rack on MEB and MQB Evo vehicles, which damps '
+    'lateral wobble. On by default for these cars.'
+  ),
 }
 
 class VolkswagenSettings(BrandPanel):
@@ -2280,7 +2288,24 @@ class VolkswagenSettings(BrandPanel):
       enabled=lambda: not ui_state.engaged,
     )
 
-    self.items = [self.pq_hca_toggle, self.lateral_when_long_unavailable, self.mqb_acc_resume, self.mqb_steering_lockout]
+    self.curvature_controller = toggle_item(
+      lambda: tr("Curvature Controller"),
+      description=lambda: tr(DESCRIPTIONS["EnableCurvatureController"]),
+      initial_state=ui_state.params.get_bool("EnableCurvatureController"),
+      callback=self._on_curvature_controller,
+      enabled=lambda: not ui_state.engaged,
+    )
+
+    self.smooth_steer = toggle_item(
+      lambda: tr("Smooth Steering"),
+      description=lambda: tr(DESCRIPTIONS["EnableSmoothSteer"]),
+      initial_state=ui_state.params.get_bool("EnableSmoothSteer"),
+      callback=self._on_smooth_steer,
+      enabled=lambda: not ui_state.engaged,
+    )
+
+    self.items = [self.pq_hca_toggle, self.lateral_when_long_unavailable, self.mqb_acc_resume, self.mqb_steering_lockout,
+                  self.curvature_controller, self.smooth_steer]
 
   def _flags(self) -> VolkswagenFlags:
     bundle = ui_state.params.get("CarPlatformBundle")
@@ -2305,6 +2330,9 @@ class VolkswagenSettings(BrandPanel):
   def _supports_lateral_when_faulted(self) -> bool:
     return not bool(self._flags() & VolkswagenFlags.MLB)
 
+  def _is_curvature_car(self) -> bool:
+    return bool(self._flags() & (VolkswagenFlags.MEB | VolkswagenFlags.MQB_EVO))
+
   def _on_pq_hca_toggle(self, state: bool):
     ui_state.params.put_bool("pqhca5or7Toggle", state)
 
@@ -2317,12 +2345,21 @@ class VolkswagenSettings(BrandPanel):
   def _on_mqb_steering_lockout(self, state: bool):
     ui_state.params.put_bool("iqMqbSteeringLockout", state)
 
+  def _on_curvature_controller(self, state: bool):
+    ui_state.params.put_bool("EnableCurvatureController", state)
+
+  def _on_smooth_steer(self, state: bool):
+    ui_state.params.put_bool("EnableSmoothSteer", state)
+
   def update_settings(self):
     self.pq_hca_toggle.set_visible(self._uses_hca_status_toggle())
     self.lateral_when_long_unavailable.set_visible(self._supports_lateral_when_faulted())
     is_mqb = self._is_mqb()
     self.mqb_acc_resume.set_visible(is_mqb)
     self.mqb_steering_lockout.set_visible(is_mqb)
+    is_curvature_car = self._is_curvature_car()
+    self.curvature_controller.set_visible(is_curvature_car)
+    self.smooth_steer.set_visible(is_curvature_car)
 
 _REGISTRY: dict[str, type[BrandPanel]] = {
   "hyundai": HyundaiSettings,

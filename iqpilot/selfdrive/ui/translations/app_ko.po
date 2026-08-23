@@ -439,6 +439,15 @@ msgstr "선택한 모델의 캐시를 비우고 다시 다운로드할까요?"
 msgid "Close"
 msgstr "닫기"
 
+#: iqpilot/ui/layouts/settings/iq_panels.py:2245
+msgid ""
+"Close the steering loop on MEB and MQB Evo vehicles. IQ.Pilot corrects its "
+"steering command against the curvature the car is actually holding, "
+"instead of sending the planned curvature straight through."
+msgstr ""
+"MEB 및 MQB Evo 차량에서 조향 제어를 폐루프로 동작시킵니다. IQ.Pilot이 계획한 곡률을 그대로 보내지 않고 차량이 "
+"실제로 유지하는 곡률에 맞춰 조향 명령을 보정합니다."
+
 #: openpilot/selfdrive/ui/layouts/routes.py:174
 #, python-brace-format
 msgid "Cloud"
@@ -565,6 +574,11 @@ msgstr "크루즈"
 #, python-brace-format
 msgid "Current Version"
 msgstr "현재 버전"
+
+#: iqpilot/ui/layouts/settings/iq_panels.py:2288
+#, python-brace-format
+msgid "Curvature Controller"
+msgstr "곡률 컨트롤러"
 
 #: iqpilot/ui/layouts/settings/iq_panels.py:412
 #: iqpilot/ui/layouts/settings/iq_panels.py:449
@@ -1528,6 +1542,14 @@ msgstr "예측 거리 줄이기"
 msgid "Low-Speed Turn Planning"
 msgstr "저속 회전 경로 계획"
 
+#: iqpilot/ui/layouts/settings/iq_panels.py:2249
+msgid ""
+"Low-pass the planned curvature before it reaches the rack on MEB and MQB "
+"Evo vehicles, which damps lateral wobble. On by default for these cars."
+msgstr ""
+"MEB 및 MQB Evo 차량에서 계획한 곡률을 스티어링 랙에 보내기 전에 저역 통과 필터로 처리해 좌우 흔들림을 줄입니다. 해당 "
+"차량에서는 기본으로 켜집니다."
+
 #: iqpilot/ui/layouts/settings/iq_panels.py:2643
 #, python-brace-format
 msgid "MANUAL"
@@ -2490,6 +2512,11 @@ msgid ""
 "data for your region to be installed."
 msgstr "현재 도로 이름을 주행 화면 위에 표시합니다.<br>해당 지역의 오프라인 지도 데이터가 설치되어 있어야 합니다."
 
+#: iqpilot/ui/layouts/settings/iq_panels.py:2300
+#, python-brace-format
+msgid "Smooth Steering"
+msgstr "부드러운 조향"
+
 #: openpilot/selfdrive/ui/widgets/offroad_alerts.py:106
 #, python-brace-format
 msgid "Snooze Update"
@@ -3118,6 +3145,15 @@ msgstr "자동"
 msgid "auto dark"
 msgstr "자동 어둡게"
 
+#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:324
+#, python-brace-format
+msgid ""
+"automatic\n"
+"updates"
+msgstr ""
+"자동\n"
+"업데이트"
+
 #: openpilot/selfdrive/ui/mici/layouts/onboarding.py:405
 #, python-brace-format
 msgid "back"
@@ -3223,16 +3259,10 @@ msgstr "정지 상태에서 출발 (베타)"
 msgid "cruise"
 msgstr "크루즈"
 
-#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:339
+#: openpilot/selfdrive/ui/mici/layouts/settings/vehicle.py:83
 #, python-brace-format
-msgid "currently off"
-msgstr "현재 꺼짐"
-
-#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:324
-#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:339
-#, python-brace-format
-msgid "currently on"
-msgstr "현재 켜짐"
+msgid "curvature controller"
+msgstr "곡률 컨트롤러"
 
 #: openpilot/selfdrive/ui/mici/layouts/settings/settings.py:94
 #, python-brace-format
@@ -3272,16 +3302,6 @@ msgstr "기기"
 #, python-brace-format
 msgid "device ID"
 msgstr "기기 ID"
-
-#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:324
-#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:338
-#, python-brace-format
-msgid ""
-"disable\n"
-"updates"
-msgstr ""
-"업데이트\n"
-"끄기"
 
 #: openpilot/selfdrive/ui/mici/layouts/settings/network/network_layout.py:56
 #: openpilot/selfdrive/ui/mici/layouts/settings/network/network_layout.py:190
@@ -3361,15 +3381,6 @@ msgstr "다이내믹"
 #, python-brace-format
 msgid "eSIM"
 msgstr "eSIM"
-
-#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:338
-#, python-brace-format
-msgid ""
-"enable\n"
-"updates"
-msgstr ""
-"업데이트\n"
-"켜기"
 
 #: openpilot/selfdrive/ui/mici/layouts/settings/dashcam.py:15
 #, python-brace-format
@@ -3662,6 +3673,7 @@ msgstr "핸들 조작"
 #: openpilot/selfdrive/ui/mici/layouts/settings/cruise.py:87
 #: openpilot/selfdrive/ui/mici/layouts/settings/steering.py:75
 #: openpilot/selfdrive/ui/mici/layouts/settings/vehicle.py:76
+#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:338
 #, python-brace-format
 msgid "off"
 msgstr "끄기"
@@ -3670,6 +3682,12 @@ msgstr "끄기"
 #, python-brace-format
 msgid "offline"
 msgstr "오프라인"
+
+#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:324
+#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:338
+#, python-brace-format
+msgid "on"
+msgstr "켜기"
 
 #: openpilot/selfdrive/ui/mici/layouts/settings/device.py:146
 #, python-brace-format
@@ -3925,6 +3943,11 @@ msgstr ""
 #, python-brace-format
 msgid "slow"
 msgstr "느림"
+
+#: openpilot/selfdrive/ui/mici/layouts/settings/vehicle.py:84
+#, python-brace-format
+msgid "smooth steering"
+msgstr "부드러운 조향"
 
 #: openpilot/selfdrive/ui/mici/layouts/settings/settings.py:107
 #, python-brace-format

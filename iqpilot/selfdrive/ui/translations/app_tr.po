@@ -452,6 +452,16 @@ msgstr "Seçili modelin önbelleği temizlenip yeniden indirilsin mi?"
 msgid "Close"
 msgstr "Kapat"
 
+#: iqpilot/ui/layouts/settings/iq_panels.py:2245
+msgid ""
+"Close the steering loop on MEB and MQB Evo vehicles. IQ.Pilot corrects its "
+"steering command against the curvature the car is actually holding, "
+"instead of sending the planned curvature straight through."
+msgstr ""
+"MEB ve MQB Evo araçlarda direksiyon kontrolünü kapalı çevrim yapar. "
+"IQ.Pilot planlanan eğriliği doğrudan göndermek yerine, aracın gerçekte "
+"tuttuğu eğriliğe göre direksiyon komutunu düzeltir."
+
 #: openpilot/selfdrive/ui/layouts/routes.py:174
 #, python-brace-format
 msgid "Cloud"
@@ -581,6 +591,11 @@ msgstr "Hız sabitleyici"
 #, python-brace-format
 msgid "Current Version"
 msgstr "Geçerli Sürüm"
+
+#: iqpilot/ui/layouts/settings/iq_panels.py:2288
+#, python-brace-format
+msgid "Curvature Controller"
+msgstr "Eğrilik Denetleyicisi"
 
 #: iqpilot/ui/layouts/settings/iq_panels.py:412
 #: iqpilot/ui/layouts/settings/iq_panels.py:449
@@ -1583,6 +1598,15 @@ msgstr "daha düşük öngörü"
 msgid "Low-Speed Turn Planning"
 msgstr "Düşük hızda dönüş planlaması"
 
+#: iqpilot/ui/layouts/settings/iq_panels.py:2249
+msgid ""
+"Low-pass the planned curvature before it reaches the rack on MEB and MQB "
+"Evo vehicles, which damps lateral wobble. On by default for these cars."
+msgstr ""
+"MEB ve MQB Evo araçlarda planlanan eğriliği direksiyon kutusuna ulaşmadan "
+"önce alçak geçiren filtreden geçirir ve yanal salınımı söndürür. Bu "
+"araçlarda varsayılan olarak açıktır."
+
 #: iqpilot/ui/layouts/settings/iq_panels.py:2643
 #, python-brace-format
 msgid "MANUAL"
@@ -2579,6 +2603,11 @@ msgstr ""
 "Geçerli yolun adını sürüş görünümünün üzerinde gösterir.<br>Bölgeniz için "
 "çevrimdışı harita verisinin kurulu olmasını gerektirir."
 
+#: iqpilot/ui/layouts/settings/iq_panels.py:2300
+#, python-brace-format
+msgid "Smooth Steering"
+msgstr "Yumuşak Direksiyon"
+
 #: openpilot/selfdrive/ui/widgets/offroad_alerts.py:106
 #, python-brace-format
 msgid "Snooze Update"
@@ -3240,6 +3269,15 @@ msgstr "otomatik"
 msgid "auto dark"
 msgstr "otomatik koyu"
 
+#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:324
+#, python-brace-format
+msgid ""
+"automatic\n"
+"updates"
+msgstr ""
+"otomatik\n"
+"güncellemeler"
+
 #: openpilot/selfdrive/ui/mici/layouts/onboarding.py:405
 #, python-brace-format
 msgid "back"
@@ -3345,16 +3383,10 @@ msgstr "duraktan yavaş kalkış (beta)"
 msgid "cruise"
 msgstr "hız sabitleyici"
 
-#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:339
+#: openpilot/selfdrive/ui/mici/layouts/settings/vehicle.py:83
 #, python-brace-format
-msgid "currently off"
-msgstr "şu anda kapalı"
-
-#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:324
-#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:339
-#, python-brace-format
-msgid "currently on"
-msgstr "şu anda açık"
+msgid "curvature controller"
+msgstr "eğrilik denetleyicisi"
 
 #: openpilot/selfdrive/ui/mici/layouts/settings/settings.py:94
 #, python-brace-format
@@ -3394,16 +3426,6 @@ msgstr "cihaz"
 #, python-brace-format
 msgid "device ID"
 msgstr "cihaz kimliği"
-
-#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:324
-#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:338
-#, python-brace-format
-msgid ""
-"disable\n"
-"updates"
-msgstr ""
-"güncellemeleri\n"
-"kapat"
 
 #: openpilot/selfdrive/ui/mici/layouts/settings/network/network_layout.py:56
 #: openpilot/selfdrive/ui/mici/layouts/settings/network/network_layout.py:190
@@ -3483,15 +3505,6 @@ msgstr "dinamik"
 #, python-brace-format
 msgid "eSIM"
 msgstr "eSIM"
-
-#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:338
-#, python-brace-format
-msgid ""
-"enable\n"
-"updates"
-msgstr ""
-"güncellemeleri\n"
-"aç"
 
 #: openpilot/selfdrive/ui/mici/layouts/settings/dashcam.py:15
 #, python-brace-format
@@ -3784,6 +3797,7 @@ msgstr "direksiyon dokunuşu"
 #: openpilot/selfdrive/ui/mici/layouts/settings/cruise.py:87
 #: openpilot/selfdrive/ui/mici/layouts/settings/steering.py:75
 #: openpilot/selfdrive/ui/mici/layouts/settings/vehicle.py:76
+#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:338
 #, python-brace-format
 msgid "off"
 msgstr "kapalı"
@@ -3792,6 +3806,12 @@ msgstr "kapalı"
 #, python-brace-format
 msgid "offline"
 msgstr "çevrimdışı"
+
+#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:324
+#: openpilot/selfdrive/ui/mici/layouts/settings/software.py:338
+#, python-brace-format
+msgid "on"
+msgstr "açık"
 
 #: openpilot/selfdrive/ui/mici/layouts/settings/device.py:146
 #, python-brace-format
@@ -4047,6 +4067,11 @@ msgstr ""
 #, python-brace-format
 msgid "slow"
 msgstr "yavaş"
+
+#: openpilot/selfdrive/ui/mici/layouts/settings/vehicle.py:84
+#, python-brace-format
+msgid "smooth steering"
+msgstr "yumuşak direksiyon"
 
 #: openpilot/selfdrive/ui/mici/layouts/settings/settings.py:107
 #, python-brace-format

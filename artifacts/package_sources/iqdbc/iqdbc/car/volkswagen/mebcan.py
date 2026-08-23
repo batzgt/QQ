@@ -17,6 +17,7 @@ ACC_HMS_RELEASE      = 4
 ACC_HMS_HOLD         = 1
 ACC_HMS_NO_REQUEST   = 0
 ACC_HMS_RAMP_FRAMES  = 5
+ACC_HMS_RELEASE_SPEED = 5 * CV.KPH_TO_MS
 
 ACC_HUD_ERROR    = 6
 ACC_HUD_OVERRIDE = 4
@@ -161,33 +162,34 @@ def acc_control_value(main_switch_on, acc_faulted, long_active, override):
   return acc_control
 
 
-def acc_hold_type(main_switch_on, acc_faulted, long_active, starting, stopping, esp_hold, override,
+def acc_hold_type(main_switch_on, acc_faulted, long_active, starting, stopping, esp_hold, v_ego,
                   prev_acc_hold_type, ramp_counter):
   # warning: car is reacting to hold mechanic even with long control off
+  # HALTEN or ANFAHREN straight to KEINE_ANFORDERUNG faults the car into park, so a ramp always sits
+  # in between: going inactive ramps for a fixed time, and a release while engaged ramps until the
+  # car is actually rolling
+  active = long_active and not acc_faulted
 
-  if acc_faulted:
-    acc_hold_type = ACC_HMS_NO_REQUEST # no hold request
-  elif not long_active:
-    acc_hold_type = ACC_HMS_NO_REQUEST # no hold request
-  elif override:
-    acc_hold_type = ACC_HMS_NO_REQUEST # overriding / no request
-  elif starting:
-    acc_hold_type = ACC_HMS_RELEASE # release request and startup
-  elif stopping or esp_hold:
-    acc_hold_type = ACC_HMS_HOLD # hold or hold request
+  if not active:
+    if ramp_counter > 0:
+      acc_hold_type = ACC_HMS_RAMP_RELEASE
+      ramp_counter -= 1
+    else:
+      acc_hold_type = ACC_HMS_NO_REQUEST
   else:
-    acc_hold_type = ACC_HMS_NO_REQUEST # no hold request
-
-  if acc_hold_type == ACC_HMS_HOLD:
-    ramp_counter = 0
-  elif prev_acc_hold_type == ACC_HMS_HOLD and acc_hold_type == ACC_HMS_NO_REQUEST:
-    acc_hold_type = ACC_HMS_RAMP_RELEASE
+    was_active = ramp_counter == ACC_HMS_RAMP_FRAMES
     ramp_counter = ACC_HMS_RAMP_FRAMES
-  elif ramp_counter > 0:
-    acc_hold_type = ACC_HMS_RAMP_RELEASE
-    ramp_counter -= 1
-  else:
-    pass
+
+    if stopping:
+      acc_hold_type = ACC_HMS_HOLD
+    elif starting:
+      acc_hold_type = ACC_HMS_RELEASE
+    else:
+      releasing = was_active and prev_acc_hold_type in (ACC_HMS_HOLD, ACC_HMS_RELEASE, ACC_HMS_RAMP_RELEASE)
+      if releasing and v_ego < ACC_HMS_RELEASE_SPEED:
+        acc_hold_type = ACC_HMS_RAMP_RELEASE
+      else:
+        acc_hold_type = ACC_HMS_NO_REQUEST
 
   return acc_hold_type, ramp_counter
 

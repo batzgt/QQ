@@ -321,7 +321,7 @@ class TargetBranchButton(BigButton):
 
 class DisableUpdatesButton(BigButton):
   def __init__(self):
-    super().__init__(tr("disable\nupdates"), tr("currently on"))
+    super().__init__(tr("automatic\nupdates"), tr("on"))
     self.set_enabled(lambda: ui_state.is_offroad())
     self.set_press_effect_enabled(False)
     self._label.set_font_size(40)
@@ -335,8 +335,7 @@ class DisableUpdatesButton(BigButton):
 
   def _sync_from_params(self):
     disabled = ui_state.params.get_bool("DisableUpdates")
-    self.set_text(tr("enable\nupdates") if disabled else tr("disable\nupdates"))
-    self.set_value(tr("currently off") if disabled else tr("currently on"))
+    self.set_value(tr("off") if disabled else tr("on"))
 
   def _update_state(self):
     super()._update_state()

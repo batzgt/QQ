@@ -8,6 +8,7 @@ import iqpilot.cereal.messaging as messaging
 from iqpilot.common.constants import CV
 from iqpilot.common.iq_perf import PerfSample, PerfTraceEmitter, PerfTraceRing
 from iqpilot.common.params import Params
+from iqpilot.common.pt2 import PT2Filter
 from iqpilot.common.realtime import config_realtime_process, lock_memory, DT_CTRL, Priority, Ratekeeper
 from iqpilot.common.swaglog import cloudlog
 
@@ -45,6 +46,8 @@ CTRL_PHASE_WARN_US = 8_000
 CTRL_TAIL_WARN_US = 8_000
 CTRL_FLAG_MISSING_INPUTS = 1 << 0
 CTRL_FLAG_RK_OVERRUN = 1 << 1
+SMOOTH_STEER_W0 = 46.0
+SMOOTH_STEER_ZETA = 1.0
 LAT_SMOOTH_SECONDS = 0.0
 
 
@@ -77,6 +80,7 @@ class Controls(IQControlsLayer):
 
     self._param_update_time = 0.0
     self.enable_curvature_controller = False
+    self.enable_smooth_steer = False
     self.enable_speed_limit_control = False
     self.enable_speed_limit_predicative = False
     self.enable_pred_react_to_speed_limits = False
@@ -94,6 +98,11 @@ class Controls(IQControlsLayer):
 
     self.LoC = LongControl(self.CP, self.CP_IQ)
     self.VM = VehicleModel(self.CP)
+
+    self.smooth_steer = PT2Filter(SMOOTH_STEER_W0, SMOOTH_STEER_ZETA, DT_CTRL)
+    self.is_curvature_car = self.CP.steerControlType == car.CarParams.SteerControlType.curvatureDEPRECATED
+    if self.is_curvature_car and self.params.get("EnableSmoothSteer") is None:
+      self.params.put_bool("EnableSmoothSteer", True)
     self.LaC: LatControl
     if self.CP.steerControlType in (car.CarParams.SteerControlType.angle, car.CarParams.SteerControlType.curvatureDEPRECATED):
       self.LaC = LatControlAngle(self.CP, self.CP_IQ, self.CI, DT_CTRL)
@@ -119,6 +128,7 @@ class Controls(IQControlsLayer):
 
   def _update_params(self) -> None:
     self.enable_curvature_controller = self.params.get_bool("EnableCurvatureController")
+    self.enable_smooth_steer = self.params.get_bool("EnableSmoothSteer")
     self.enable_speed_limit_control = self.params.get_bool("EnableSpeedLimitControl")
     self.enable_speed_limit_predicative = self.params.get_bool("EnableSpeedLimitPredicative")
     self.enable_pred_react_to_speed_limits = self.params.get_bool("EnableSLPredReactToSL")
@@ -224,6 +234,11 @@ class Controls(IQControlsLayer):
       new_desired_curvature = self.sm['lateralManeuverPlan'].desiredCurvature
     else:
       new_desired_curvature = model_v2.action.desiredCurvature
+
+    if self.is_curvature_car and self.enable_smooth_steer and CC.latActive:
+      new_desired_curvature = self.smooth_steer.update(new_desired_curvature)
+    else:
+      self.smooth_steer.reset(new_desired_curvature)
 
     lat_accel_override = bool(CS.gasPressed) or bool(self.sm['iqState'].aol.active)
     self.desired_curvature, curvature_limited = clip_curvature(CS.vEgo, self.desired_curvature, new_desired_curvature, lp.roll, lat_accel_override)

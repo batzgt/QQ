@@ -21,6 +21,19 @@ GuidanceState = custom.AlwaysOnLateral.AlwaysOnLateralState
 ONROAD_BRIGHTNESS_TIMER_PAUSED = -1
 
 
+def log_param_from_bytes(params: Params, key: str, schema):
+  # a capnp param written by anything other than the daemon that owns it takes the whole UI
+  # down at import time, and the UI cannot repair it -- read it defensively and carry on
+  dat = params.get(key)
+  if not dat:
+    return None
+  try:
+    return messaging.log_from_bytes(dat, schema)
+  except Exception:
+    cloudlog.exception(f"ui: ignoring malformed {key}")
+    return None
+
+
 class OnroadTimerStatus(Enum):
   NONE = 0
   PAUSE = 1
@@ -158,9 +171,9 @@ class IQUIState:
   }
 
   def update_params(self) -> None:
-    CP_IQ_bytes = self.params.get("IQCarParamsPersistentV2")
-    if CP_IQ_bytes is not None:
-      self.CP_IQ = messaging.log_from_bytes(CP_IQ_bytes, custom.IQCarParams)
+    CP_IQ = log_param_from_bytes(self.params, "IQCarParamsPersistentV2", custom.IQCarParams)
+    if CP_IQ is not None:
+      self.CP_IQ = CP_IQ
 
     for attr, (key, kind) in self._PARAM_MIRROR.items():
       if kind == "bool":
@@ -412,9 +425,9 @@ class UIState(IQUIState):
       self._started_prev = self.started
 
   def update_params(self) -> None:
-    CP_bytes = self.params.get("CarParamsPersistent")
-    if CP_bytes is not None:
-      self.CP = messaging.log_from_bytes(CP_bytes, car.CarParams)
+    CP = log_param_from_bytes(self.params, "CarParamsPersistent", car.CarParams)
+    if CP is not None:
+      self.CP = CP
       if self.CP.alphaLongitudinalAvailable:
         self.has_longitudinal_control = self.params.get_bool("AlphaLongitudinalEnabled")
       else:

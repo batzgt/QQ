@@ -80,6 +80,8 @@ class VehicleLayoutMici(NavScroller):
     self._vw_lateral = BigParamControl(tr("lateral when cruise faulted"), "AllowLateralWhenLongUnavailable")
     self._vw_mqb_acc_resume = BigParamControl(tr("MQB ACC resume"), "iqMqbAccResume")
     self._vw_mqb_steering_lockout = BigParamControl(tr("MQB steering lockout"), "iqMqbSteeringLockout")
+    self._vw_curvature_controller = BigParamControl(tr("curvature controller"), "EnableCurvatureController")
+    self._vw_smooth_steer = BigParamControl(tr("smooth steering"), "EnableSmoothSteer")
     self._tesla_vtb = BigParamControl(tr("virtual torque blending"), "IQTeslaTorqueBlend")
     self._tesla_fsd_visualization = BigParamControl(tr("FSD visuals"), "IQTeslaFsdVisualization")
 
@@ -87,7 +89,8 @@ class VehicleLayoutMici(NavScroller):
       "toyota": [self._toyota_long],
       "hyundai": [self._hyundai_tuning],
       "subaru": [self._subaru_snag, self._subaru_manual],
-      "volkswagen": [self._vw_pq_hca, self._vw_lateral, self._vw_mqb_acc_resume, self._vw_mqb_steering_lockout],
+      "volkswagen": [self._vw_pq_hca, self._vw_lateral, self._vw_mqb_acc_resume, self._vw_mqb_steering_lockout,
+                     self._vw_curvature_controller, self._vw_smooth_steer],
       "tesla": [self._tesla_vtb, self._tesla_fsd_visualization],
     }
     self._all_brand_widgets = [w for ws in self._brand_widgets.values() for w in ws]
@@ -122,6 +125,10 @@ class VehicleLayoutMici(NavScroller):
     from iqdbc.car.volkswagen.values import VolkswagenFlags
     flags = self._vw_flags()
     return not bool(flags & (VolkswagenFlags.PQ | VolkswagenFlags.MLB | VolkswagenFlags.MEB | VolkswagenFlags.MEB_GEN2 | VolkswagenFlags.MQB_EVO))
+
+  def _is_vw_curvature_car(self) -> bool:
+    from iqdbc.car.volkswagen.values import VolkswagenFlags
+    return bool(self._vw_flags() & (VolkswagenFlags.MEB | VolkswagenFlags.MQB_EVO))
 
   def _supports_vw_lateral_when_faulted(self) -> bool:
     from iqdbc.car.volkswagen.values import VolkswagenFlags
@@ -193,6 +200,7 @@ class VehicleLayoutMici(NavScroller):
     uses_hca_status_toggle = self._uses_vw_hca_status_toggle()
     is_mqb = self._is_vw_mqb()
     supports_lateral_when_faulted = self._supports_vw_lateral_when_faulted()
+    is_curvature_car = self._is_vw_curvature_car()
     visible = set(self._brand_widgets.get(brand, []))
     for w in self._all_brand_widgets:
       show = w in visible
@@ -202,6 +210,8 @@ class VehicleLayoutMici(NavScroller):
         show = show and is_mqb
       elif w is self._vw_lateral:
         show = show and supports_lateral_when_faulted
+      elif w in (self._vw_curvature_controller, self._vw_smooth_steer):
+        show = show and is_curvature_car
       w.set_visible(show)
       if show:
         w.refresh()
