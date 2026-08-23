@@ -334,6 +334,9 @@ class CarState(CarStateBase):
     else:
       gear_raw = pt_cp.vl["Getriebe_11"]["GE_Fahrstufe"]
     ret.gearShifter = self.parse_gear_shifter(self.CCP.shifter_values.get(gear_raw, None))
+    if (self.CP.flags & VolkswagenFlags.MQB_EVO) and ret.gearShifter == GearShifter.unknown:
+      reversing = bool(pt_cp.vl["Gateway_72"]["BCM1_Rueckfahrlicht_Schalter"])
+      ret.gearShifter = GearShifter.reverse if reversing else GearShifter.drive
     drive_mode = ret.gearShifter == GearShifter.drive
 
     hca_status = self.CCP.hca_status_values.get(pt_cp.vl["QFK_01"]["LatCon_HCA_Status"])
