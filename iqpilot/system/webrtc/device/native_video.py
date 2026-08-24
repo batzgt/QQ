@@ -4,7 +4,7 @@ import struct
 import time
 
 import av
-from iqpilot.system.webrtc.teleoprtc_ldc.tracks import TiciVideoStreamTrack
+from iqpilot.system.webrtc.rtc.tracks import TiciVideoStreamTrack
 
 from iqpilot.cereal import messaging
 from iqpilot.common.params import Params
@@ -272,3 +272,40 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
 
   def codec_preference(self) -> str | None:
     return "H264"
+
+
+class DebugVideoStreamTrack(TiciVideoStreamTrack):
+  def __init__(self, camera_type: str):
+    super().__init__(camera_type, 0.05)
+    self._codec = av.CodecContext.create("libx264", "w")
+    self._codec.width = 640
+    self._codec.height = 480
+    self._codec.pix_fmt = "yuv420p"
+    self._codec.time_base = self._time_base
+    self._codec.framerate = 20
+    self._codec.options = {"preset": "ultrafast", "tune": "zerolatency"}
+    self._codec.open()
+    self._pts = 0
+    self.timing_sei_enabled = False
+
+  async def recv(self):
+    await asyncio.sleep(self._dt)
+    frame = av.VideoFrame(self._codec.width, self._codec.height, "yuv420p")
+    frame.planes[0].update(bytes(frame.planes[0].buffer_size))
+    for plane in frame.planes[1:]:
+      plane.update(bytes([128]) * plane.buffer_size)
+    frame.pts = self._pts
+    self._pts += int(self._dt * self._clock_rate)
+    packets = self._codec.encode(frame)
+    if not packets:
+      return await self.recv()
+    packet = av.Packet(b"".join(bytes(encoded) for encoded in packets))
+    packet.pts = frame.pts
+    packet.dts = frame.pts
+    packet.time_base = self._time_base
+    packet.duration = int(self._dt * self._clock_rate)
+    return packet
+
+  def switch_camera(self, camera_type: str) -> None:
+    if camera_type not in LiveStreamVideoStreamTrack.livestream_camera_to_sock_mapping:
+      raise ValueError(f"Unknown camera {camera_type}")

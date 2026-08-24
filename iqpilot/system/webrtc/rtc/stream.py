@@ -1,4 +1,4 @@
-# ruff: noqa: TID251, UP006, UP035
+# ruff: noqa: UP006, UP035
 
 import abc
 import asyncio
@@ -14,6 +14,7 @@ from libdatachannel import (
   Candidate,
   Description,
   FrameInfo,
+  H264RtpDepacketizer,
   H264RtpPacketizer,
   IceServer,
   NalUnit,
@@ -100,7 +101,6 @@ class WebRTCBaseStream(abc.ABC):
 
   @staticmethod
   def _make_ice_servers(servers: Optional[List[dict]]) -> List[IceServer]:
-    """Preserve Konn3kt's authenticated STUN/TURN configuration in libdatachannel."""
     parsed: List[IceServer] = []
     for server in servers or []:
       urls = server.get("urls", []) if isinstance(server, dict) else []
@@ -119,7 +119,9 @@ class WebRTCBaseStream(abc.ABC):
         except Exception:
           logging.getLogger("WebRTCStream").warning("Ignoring invalid ICE server %r", url, exc_info=True)
     # A supplied list is authoritative, including LAN-only sessions where relay is deliberately filtered.
-    return parsed or [IceServer("stun:stun.l.google.com:19302")]
+    if servers is not None:
+      return parsed
+    return [IceServer("stun:stun.l.google.com:19302")]
 
   def _log_debug(self, msg: Any, *args):
     self.logger.debug(f"{type(self)}() {msg}", *args)
@@ -144,13 +146,14 @@ class WebRTCBaseStream(abc.ABC):
       media = Description.Video(camera_type, Description.Direction.RecvOnly)
       media.add_h264_codec(96)
       track = self.peer_connection.add_track(media)
-      track.set_media_handler(OpusRtpDepacketizer())
+      track.set_media_handler(H264RtpDepacketizer())
       self._consumer_tracks.append(track)
       self.incoming_camera_tracks[camera_type] = track
     if self.expected_incoming_audio:
       media = Description.Audio("audio", Description.Direction.RecvOnly)
       media.add_opus_codec(111)
       track = self.peer_connection.add_track(media)
+      track.set_media_handler(OpusRtpDepacketizer())
       self._consumer_tracks.append(track)
       self.incoming_audio_tracks.append(track)
 
@@ -170,7 +173,7 @@ class WebRTCBaseStream(abc.ABC):
   def _make_video_media(self, track: TiciVideoStreamTrack, remote_sdp: str) -> Tuple[Description.Video, int, int, str]:
     mid, payload_type = self._find_offer_video(remote_sdp)
     ssrc = random.randint(1, 0xFFFFFFFF)
-    cname = f"teleoprtc-{random.getrandbits(32):08x}"
+    cname = f"iqpilot-video-{random.getrandbits(32):08x}"
     stream_id = f"stream-{random.getrandbits(32):08x}"
     media = Description.Video(mid, Description.Direction.SendOnly)
     media.add_h264_codec(payload_type)
@@ -193,7 +196,7 @@ class WebRTCBaseStream(abc.ABC):
   def _make_audio_media(self, remote_sdp: str) -> Tuple[Description.Audio, int, int, str]:
     mid, payload_type = self._find_offer_audio(remote_sdp)
     ssrc = random.randint(1, 0xFFFFFFFF)
-    cname = f"teleoprtc-audio-{random.getrandbits(32):08x}"
+    cname = f"iqpilot-audio-{random.getrandbits(32):08x}"
     direction = Description.Direction.SendRecv if self.expected_incoming_audio else Description.Direction.SendOnly
     media = Description.Audio(mid, direction)
     media.add_opus_codec(payload_type)
@@ -352,7 +355,6 @@ class WebRTCBaseStream(abc.ABC):
     self.incoming_message_handlers.append(message_handler)
 
   def add_ice_candidate(self, candidate: dict) -> None:
-    """Accept post-offer browser candidates for Konn3kt's existing trickle endpoint."""
     candidate_sdp = str(candidate.get("candidate") or "") if isinstance(candidate, dict) else ""
     if not candidate_sdp:
       return

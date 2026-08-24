@@ -590,7 +590,6 @@ class InferenceDaemon:
     driving_msg.drivingModelData.meta.laneChangeState = self._desire_logic.lane_change_state
     driving_msg.drivingModelData.meta.laneChangeDirection = self._desire_logic.lane_change_direction
     iq_msg.iqDriveModelData.turnSignalDirection = self._desire_logic.lane_turn_direction
-    iq_msg.iqDriveModelData.lateralEdgeBlock = self._desire_logic.lateral_edge_block
 
     populate_odometry_message(
       pose_msg,

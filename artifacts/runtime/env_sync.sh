@@ -35,59 +35,84 @@ sync_python_env() {
   fi
 
   PYTHONPATH="$DIR" /usr/local/venv/bin/python3 -c "from iqpilot.common.git_creds import install_credential_helper; install_credential_helper('$DIR')" 2>/dev/null || true
-  PACKAGE_LOCK_SHA="$(sha256sum "$DIR/uv.lock" | awk '{print $1}')"
+  PACKAGE_SOURCES_ID="$(git -C "$DIR" rev-parse --verify --quiet "HEAD:artifacts/package_sources" 2>/dev/null || true)"
+  PACKAGE_LOCK_SHA="$(printf '%s\n%s\n' "$(sha256sum "$DIR/uv.lock" | awk '{print $1}')" "$PACKAGE_SOURCES_ID" | sha256sum | awk '{print $1}')"
   INSTALLED_PACKAGE_LOCK_SHA="$(cat "$DIR/.iqpilot-package-lock-sha256" 2>/dev/null || true)"
+  mapfile -t RUNTIME_WHEELS < <(/usr/local/venv/bin/python3 "$DIR/iqpilot/system/runtime_wheel_requirements.py" "$DIR")
+  mapfile -t RUNTIME_WHEEL_SOURCES < <(/usr/local/venv/bin/python3 "$DIR/iqpilot/system/runtime_wheel_requirements.py" "$DIR" --sources)
+  RUNTIME_WHEEL_LOCK_SHA="$(printf '%s\n' "${RUNTIME_WHEELS[@]}" | sha256sum | awk '{print $1}')"
+  INSTALLED_RUNTIME_WHEEL_LOCK_SHA="$(cat "$DIR/.iqpilot-runtime-wheel-lock-sha256" 2>/dev/null || true)"
   BASE_SITE_PACKAGES="$(/usr/local/venv/bin/python3 -c 'import site; print(site.getsitepackages()[0])')"
   PROJECT_RAYLIB="$("$DIR/.venv/bin/python3" -c 'import importlib.metadata; print(importlib.metadata.distribution("raylib").locate_file(""))' 2>/dev/null || true)"
   if [[ "$PROJECT_RAYLIB" = "$DIR/.venv"/* ]]; then
     sudo rm -rf "$DIR/.venv"
-    rm -f "$DIR/.iqpilot-package-lock-sha256"
+    rm -f "$DIR/.iqpilot-package-lock-sha256" "$DIR/.iqpilot-runtime-wheel-lock-sha256"
     INSTALLED_PACKAGE_LOCK_SHA=""
+    INSTALLED_RUNTIME_WHEEL_LOCK_SHA=""
   fi
   VENV_SITE_PACKAGES="$("$DIR/.venv/bin/python3" -c 'import site; print(site.getsitepackages()[0])' 2>/dev/null || true)"
   PACKAGES_READY=0
-  if [ -d "$DIR/artifacts/package_runtime" ] && PYTHONPATH="$DIR/artifacts/package_runtime" /usr/local/venv/bin/python3 -c "import iqdbc, msgq, panda, teleoprtc, tinygrad" 2>/dev/null; then
+  if [ -d "$DIR/artifacts/package_runtime" ] && PYTHONPATH="$DIR/artifacts/package_runtime" /usr/local/venv/bin/python3 -c "import iqdbc, msgq, panda, tinygrad" 2>/dev/null; then
     PACKAGES_READY=1
-  elif [ "$PACKAGE_LOCK_SHA" = "$INSTALLED_PACKAGE_LOCK_SHA" ] && "$DIR/.venv/bin/python3" -c "import iqdbc, msgq, panda, teleoprtc, tinygrad" 2>/dev/null \
+  elif [ "$PACKAGE_LOCK_SHA" = "$INSTALLED_PACKAGE_LOCK_SHA" ] && "$DIR/.venv/bin/python3" -c "import iqdbc, msgq, panda, tinygrad" 2>/dev/null \
       && "$DIR/.venv/bin/python3" "$DIR/iqpilot/system/runtime_packages_verify.py"; then
     # a top-level import passes on a partially extracted install (lazy backends),
     # so readiness also requires every wheel RECORD file to exist on disk
     PACKAGES_READY=1
   fi
-  if [ "$PACKAGES_READY" != "1" ]; then
+  RUNTIME_WHEELS_READY=0
+  if [ -d "$DIR/artifacts/package_runtime" ] && PYTHONPATH="$DIR/artifacts/package_runtime" /usr/local/venv/bin/python3 -c "import libdatachannel" 2>/dev/null; then
+    RUNTIME_WHEELS_READY=1
+  elif [ "$RUNTIME_WHEEL_LOCK_SHA" = "$INSTALLED_RUNTIME_WHEEL_LOCK_SHA" ] && "$DIR/.venv/bin/python3" -c "import libdatachannel" 2>/dev/null \
+      && PYTHONPATH="$DIR" "$DIR/.venv/bin/python3" "$DIR/iqpilot/system/runtime_wheels_verify.py"; then
+    RUNTIME_WHEELS_READY=1
+  fi
+  if [ "$PACKAGES_READY" != "1" ] || [ "$RUNTIME_WHEELS_READY" != "1" ]; then
     UV_CACHE_DIR="$DIR/.uv-cache"
     if [ ! -x "$DIR/.venv/bin/python3" ]; then
       UV_CACHE_DIR="$UV_CACHE_DIR" uv venv --python /usr/local/venv/bin/python3 "$DIR/.venv" || return 1
       VENV_SITE_PACKAGES="$("$DIR/.venv/bin/python3" -c 'import site; print(site.getsitepackages()[0])')"
     fi
     sudo chown -R "$(id -u):$(id -g)" "$DIR/.venv" "$UV_CACHE_DIR" "$DIR/artifacts/package_sources" 2>/dev/null || true
-    IQDBC_PACKAGE_SOURCE=""
-    PACKAGE_SOURCES=()
-    while IFS=$'\t' read -r package_name package_source; do
-      PACKAGE_SOURCES+=("$package_source")
-      if [ "$package_name" = "iqdbc" ]; then
-        IQDBC_PACKAGE_SOURCE="$package_source"
-      fi
-    done < <(/usr/local/venv/bin/python3 "$DIR/iqpilot/system/runtime_package_sources.py" "$DIR")
-    if [ "${#PACKAGE_SOURCES[@]}" = "0" ] || [ -z "$IQDBC_PACKAGE_SOURCE" ]; then
+    if [ "${#RUNTIME_WHEELS[@]}" = "0" ] || [ "${#RUNTIME_WHEEL_SOURCES[@]}" = "0" ]; then
       return 1
     fi
-    PACKAGE_BUILD_PYTHONPATH="$BASE_SITE_PACKAGES:$VENV_SITE_PACKAGES"
-    # The base AGNOS venv ships Eigen as a Python package instead of under
-    # /usr/include, so source-package builds need its install directory on the compiler include path.
-    # Resolve it through Python rather than pinning the Python minor version.
-    EIGEN_INCLUDE_ROOT="$(/usr/local/venv/bin/python3 -c \
-      'from pathlib import Path; import eigen; root = Path(eigen.__file__).resolve().parent / "install"; assert (root / "eigen3/Eigen/Dense").is_file(); print(root)' \
-      2>/dev/null || true)"
-    PACKAGE_BUILD_CPATH="${CPATH:-}"
-    if [ -n "$EIGEN_INCLUDE_ROOT" ]; then
-      PACKAGE_BUILD_CPATH="$EIGEN_INCLUDE_ROOT${PACKAGE_BUILD_CPATH:+:$PACKAGE_BUILD_CPATH}"
+    if [ "$PACKAGES_READY" != "1" ]; then
+      IQDBC_PACKAGE_SOURCE=""
+      PACKAGE_SOURCES=()
+      while IFS=$'\t' read -r package_name package_source; do
+        PACKAGE_SOURCES+=("$package_source")
+        if [ "$package_name" = "iqdbc" ]; then
+          IQDBC_PACKAGE_SOURCE="$package_source"
+        fi
+      done < <(/usr/local/venv/bin/python3 "$DIR/iqpilot/system/runtime_package_sources.py" "$DIR")
+      if [ "${#PACKAGE_SOURCES[@]}" = "0" ] || [ -z "$IQDBC_PACKAGE_SOURCE" ]; then
+        return 1
+      fi
+      PACKAGE_BUILD_PYTHONPATH="$BASE_SITE_PACKAGES:$VENV_SITE_PACKAGES"
+      # The base AGNOS venv ships Eigen as a Python package instead of under
+      # /usr/include, so source-package builds need its install directory on the compiler include path.
+      # Resolve it through Python rather than pinning the Python minor version.
+      EIGEN_INCLUDE_ROOT="$(/usr/local/venv/bin/python3 -c \
+        'from pathlib import Path; import eigen; root = Path(eigen.__file__).resolve().parent / "install"; assert (root / "eigen3/Eigen/Dense").is_file(); print(root)' \
+        2>/dev/null || true)"
+      PACKAGE_BUILD_CPATH="${CPATH:-}"
+      if [ -n "$EIGEN_INCLUDE_ROOT" ]; then
+        PACKAGE_BUILD_CPATH="$EIGEN_INCLUDE_ROOT${PACKAGE_BUILD_CPATH:+:$PACKAGE_BUILD_CPATH}"
+      fi
+      UV_CACHE_DIR="$UV_CACHE_DIR" PYTHONPATH="$PACKAGE_BUILD_PYTHONPATH" CPATH="$PACKAGE_BUILD_CPATH" PATH="/usr/local/venv/bin:/usr/bin:$PATH" \
+        uv pip install --python "$DIR/.venv/bin/python" --no-build-isolation --no-deps --reinstall "$IQDBC_PACKAGE_SOURCE" || return 1
+      UV_CACHE_DIR="$UV_CACHE_DIR" PYTHONPATH="$PACKAGE_BUILD_PYTHONPATH" CPATH="$PACKAGE_BUILD_CPATH" PATH="/usr/local/venv/bin:/usr/bin:$PATH" \
+        uv pip install --python "$DIR/.venv/bin/python" --no-build-isolation --no-deps --reinstall "${PACKAGE_SOURCES[@]}" || return 1
+      printf '%s\n' "$PACKAGE_LOCK_SHA" > "$DIR/.iqpilot-package-lock-sha256"
     fi
-    UV_CACHE_DIR="$UV_CACHE_DIR" PYTHONPATH="$PACKAGE_BUILD_PYTHONPATH" CPATH="$PACKAGE_BUILD_CPATH" PATH="/usr/local/venv/bin:/usr/bin:$PATH" \
-      uv pip install --python "$DIR/.venv/bin/python" --no-build-isolation --no-deps --reinstall "$IQDBC_PACKAGE_SOURCE" || return 1
-    UV_CACHE_DIR="$UV_CACHE_DIR" PYTHONPATH="$PACKAGE_BUILD_PYTHONPATH" CPATH="$PACKAGE_BUILD_CPATH" PATH="/usr/local/venv/bin:/usr/bin:$PATH" \
-      uv pip install --python "$DIR/.venv/bin/python" --no-build-isolation --no-deps --reinstall "${PACKAGE_SOURCES[@]}" || return 1
-    printf '%s\n' "$PACKAGE_LOCK_SHA" > "$DIR/.iqpilot-package-lock-sha256"
+    if [ "$RUNTIME_WHEELS_READY" != "1" ]; then
+      UV_CACHE_DIR="$UV_CACHE_DIR" PATH="/usr/local/venv/bin:/usr/bin:$PATH" \
+        uv pip install --python "$DIR/.venv/bin/python" --no-deps --reinstall "${RUNTIME_WHEEL_SOURCES[@]}" || return 1
+      "$DIR/.venv/bin/python3" -c "import libdatachannel" || return 1
+      PYTHONPATH="$DIR" "$DIR/.venv/bin/python3" "$DIR/iqpilot/system/runtime_wheels_verify.py" || return 1
+      printf '%s\n' "$RUNTIME_WHEEL_LOCK_SHA" > "$DIR/.iqpilot-runtime-wheel-lock-sha256"
+    fi
   fi
   if [ -n "$VENV_SITE_PACKAGES" ]; then
     printf 'import site; site.addsitedir("%s")\n' "$BASE_SITE_PACKAGES" | sudo tee "$VENV_SITE_PACKAGES/iqpilot-system-venv.pth" >/dev/null

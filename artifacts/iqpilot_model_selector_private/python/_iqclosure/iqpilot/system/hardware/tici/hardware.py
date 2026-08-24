@@ -515,7 +515,7 @@ class Tici(HardwareBase):
     try:
       pid = subprocess.check_output(["pgrep", "-f", "spi0"], encoding='utf8').strip()
       subprocess.call(["sudo", "chrt", "-f", "-p", "1", pid])
-      subprocess.call(["sudo", "taskset", "-pc", "3", pid])
+      subprocess.call(["sudo", "taskset", "-pc", "3", pid], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except subprocess.CalledProcessException as e:
       print(str(e))
 

@@ -42,6 +42,31 @@ class TestManager:
     assert proc.bundle == "iqpilot_model_selector_private"
     assert proc.entry == "iqpilot_private.models.manager"
 
+  def test_modeld_watchdog_restarts_stalled_process(self, mocker):
+    proc = mocker.Mock()
+    proc.proc.is_alive.return_value = True
+
+    deadline = manager.update_modeld_watchdog(None, True, False, proc, 10.0)
+    assert deadline == 10.0 + manager.MODELD_WATCHDOG_TIMEOUT
+    assert manager.update_modeld_watchdog(deadline, True, False, proc, deadline - 0.1) == deadline
+    proc.restart.assert_not_called()
+
+    next_deadline = manager.update_modeld_watchdog(deadline, True, False, proc, deadline)
+    proc.restart.assert_called_once_with()
+    assert next_deadline == deadline + manager.MODELD_WATCHDOG_TIMEOUT
+
+  def test_modeld_watchdog_tracks_output_and_resets(self, mocker):
+    proc = mocker.Mock()
+    proc.proc.is_alive.return_value = True
+
+    deadline = manager.update_modeld_watchdog(20.0, True, True, proc, 15.0)
+    assert deadline == 15.0 + manager.MODELD_WATCHDOG_TIMEOUT
+    assert manager.update_modeld_watchdog(deadline, False, False, proc, 16.0) is None
+
+    proc.proc.is_alive.return_value = False
+    assert manager.update_modeld_watchdog(deadline, True, False, proc, 16.0) is None
+    proc.restart.assert_not_called()
+
   def test_bundle_process_stops_with_sigterm(self, mocker):
     proc = BundleProcess("test", "bundle", "entry", lambda *_: True)
     proc.proc = mocker.Mock(exitcode=None, pid=123)

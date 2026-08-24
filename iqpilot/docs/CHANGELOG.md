@@ -66,10 +66,6 @@
 - Added Always-On Lateral support through compatible Hyundai LFA buttons.
 - Added an optional mode that pauses steering torque when the driver takes the wheel and resumes after release.
 
-#### Lane Changes
-
-- Added a model-based road-edge guard that blocks unsafe lane changes with an alert.
-
 #### Lateral Tuning
 
 - Added configurable steering smoothing, slew limiting, and curvature lookahead.

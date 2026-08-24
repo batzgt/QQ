@@ -29,6 +29,7 @@ _ACTIVE_BUNDLE_KEY = "ModelManager_ActiveBundle"
 _MODELS_CACHE_KEY = "ModelManager_ModelsCache"
 _RUNNER_CACHE_KEY = "ModelRunnerTypeCache"
 _DOWNLOAD_INDEX_KEY = "ModelManager_DownloadIndex"
+_PENDING_INDEX_KEY = "ModelManager_PendingIndex"
 _PENDING_MODEL_RESTORE_FILE = "/data/k3_pending_model_restore"
 _STOCK_RUNNER = int(Runner.stock)
 _TINYGRAD_RUNNER = int(Runner.tinygrad)
@@ -226,6 +227,7 @@ def select_default_model(params: Params = None) -> None:
   bundle_dict = _load_default_bundle_dict()
   ensure_default_model_files(bundle_dict)
   params.remove(_DOWNLOAD_INDEX_KEY)
+  params.remove(_PENDING_INDEX_KEY)
   params.put(_ACTIVE_BUNDLE_KEY, bundle_dict)
   params.remove(_RUNNER_CACHE_KEY)
   params.put(_RUNNER_CACHE_KEY, _TINYGRAD_RUNNER)

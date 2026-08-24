@@ -1,16 +1,33 @@
-import pytest
-import asyncio
 import json
-# for aiortc and its dependencies
-import warnings
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-warnings.filterwarnings("ignore", category=RuntimeWarning) # TODO: remove this when google-crc32c publish a python3.12 wheel
+from types import SimpleNamespace
 
-from iqpilot.system.webrtc.webrtcd import get_stream
-
-import aiortc
-from teleoprtc import WebRTCOfferBuilder
 from parameterized import parameterized_class
+import pytest
+
+from iqpilot.system.webrtc.webrtcd import add_ice, get_stream
+
+
+class FakeSession:
+  instances = []
+
+  def __init__(self, identifier="session"):
+    self.identifier = identifier
+    self.started = False
+    self.stopped = False
+    self.candidates = []
+    self.instances.append(self)
+
+  async def get_answer(self):
+    return SimpleNamespace(sdp="answer", type="answer")
+
+  def start(self):
+    self.started = True
+
+  async def stop_async(self):
+    self.stopped = True
+
+  async def add_ice_candidate(self, candidate):
+    self.candidates.append(candidate)
 
 
 @parameterized_class(("in_services", "out_services"), [
@@ -21,44 +38,38 @@ from parameterized import parameterized_class
 ])
 @pytest.mark.asyncio
 class TestWebrtcdProc:
-  async def assertCompletesWithTimeout(self, awaitable, timeout=10):
-    try:
-      async with asyncio.timeout(timeout):
-        await awaitable
-    except TimeoutError:
-      pytest.fail("Timeout while waiting for awaitable to complete")
-
   async def test_webrtcd(self, mocker):
-    mock_request = mocker.MagicMock()
-    async def connect(offer):
-      body = {'sdp': offer.sdp, 'cameras': offer.video, 'bridge_services_in': self.in_services, 'bridge_services_out': self.out_services}
-      mock_request.json.side_effect = mocker.AsyncMock(return_value=body)
-      response = await get_stream(mock_request)
-      response_json = json.loads(response.text)
-      return aiortc.RTCSessionDescription(**response_json)
+    session = FakeSession()
+    mocker.patch("iqpilot.system.webrtc.webrtcd._new_stream_session", return_value=session)
+    request = mocker.MagicMock()
+    request.app = {"streams": {}, "debug": False}
+    request.json = mocker.AsyncMock(return_value={
+      "sdp": "offer",
+      "cameras": ["road"],
+      "bridge_services_in": self.in_services,
+      "bridge_services_out": self.out_services,
+    })
 
-    builder = WebRTCOfferBuilder(connect, ice_servers=[])
-    builder.offer_to_receive_video_stream("road")
-    builder.offer_to_receive_audio_stream()
-    if len(self.in_services) > 0 or len(self.out_services) > 0:
-      builder.add_messaging()
+    response = await get_stream(request)
 
-    stream = builder.stream()
+    assert response.status == 200
+    assert json.loads(response.text) == {"sdp": "answer", "type": "answer"}
+    assert request.app["streams"] == {session.identifier: session}
+    assert session.started
 
-    await self.assertCompletesWithTimeout(stream.start())
-    await self.assertCompletesWithTimeout(stream.wait_for_connection())
+  async def test_replaces_session_and_routes_ice(self, mocker):
+    previous = FakeSession("previous")
+    session = FakeSession("current")
+    mocker.patch("iqpilot.system.webrtc.webrtcd._new_stream_session", return_value=session)
+    request = mocker.MagicMock()
+    request.app = {"streams": {previous.identifier: previous}, "debug": False}
+    request.json = mocker.AsyncMock(return_value={"sdp": "offer", "cameras": ["road"]})
 
-    assert stream.has_incoming_video_track("road")
-    assert stream.has_incoming_audio_track()
-    assert stream.has_messaging_channel() == (len(self.in_services) > 0 or len(self.out_services) > 0)
+    response = await get_stream(request)
 
-    video_track, audio_track = stream.get_incoming_video_track("road"), stream.get_incoming_audio_track()
-    await self.assertCompletesWithTimeout(video_track.recv())
-    await self.assertCompletesWithTimeout(audio_track.recv())
-
-    await self.assertCompletesWithTimeout(stream.stop())
-
-    # cleanup, very implementation specific, test may break if it changes
-    assert mock_request.app["streams"].__setitem__.called, "Implementation changed, please update this test"
-    _, session = mock_request.app["streams"].__setitem__.call_args.args
-    await self.assertCompletesWithTimeout(session.post_run_cleanup())
+    assert response.status == 200
+    assert previous.stopped
+    request.json = mocker.AsyncMock(return_value={"candidate": {"candidate": "candidate:1"}})
+    ice_response = await add_ice(request)
+    assert ice_response.status == 200
+    assert session.candidates == [{"candidate": "candidate:1"}]

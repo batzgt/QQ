@@ -222,9 +222,6 @@ class SelfdriveD(GapButtonActions):
 
     model_data = self._get_model_data_ext()
     model_events = []
-    if model_data.lateralEdgeBlock != custom.IQLateralEdgeBlock.none:
-      model_events.append(custom.IQOnroadEvent.EventName.lateralEdgeBlocked)
-
     lane_turn_direction = model_data.turnSignalDirection
     if lane_turn_direction == TurnDirection.turnLeft:
       model_events.append(custom.IQOnroadEvent.EventName.modelTurnLeft)

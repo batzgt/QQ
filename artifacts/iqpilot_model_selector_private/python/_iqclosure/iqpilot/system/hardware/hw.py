@@ -29,6 +29,12 @@ class Paths:
     return os.path.join(str(Path.home()), ".comma" + os.environ.get("OPENPILOT_PREFIX", ""))
 
   @staticmethod
+  def params() -> str:
+    if os.environ.get("PARAMS_ROOT"):
+      return os.environ["PARAMS_ROOT"]
+    return os.path.join(Paths.comma_home(), "params") if PC else "/data/params"
+
+  @staticmethod
   def log_root() -> str:
     if os.environ.get('LOG_ROOT', False):
       return os.environ['LOG_ROOT']

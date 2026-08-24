@@ -1,5 +1,8 @@
+import asyncio
 import json
 import math
+
+import pytest
 
 from iqpilot.cereal import log, messaging
 from iqpilot.system.webrtc.ui_stream import (
@@ -270,11 +273,13 @@ class TestUIStreamFrame:
 
 
 class TestSessionWiring:
-  def test_set_ui_stream_control_message(self):
-    import asyncio
+  @pytest.mark.asyncio
+  async def test_set_ui_stream_control_message(self, mocker):
     import logging
     from types import SimpleNamespace
-    from iqpilot.system.webrtc.webrtcd import StreamSession
+    from iqpilot.system.webrtc.session import StreamSession
+
+    mocker.patch("iqpilot.system.webrtc.ui_stream.messaging.SubMaster", return_value=FakeSubMaster(make_readers()))
 
     session = StreamSession.__new__(StreamSession)
     session.logger = logging.getLogger("webrtcd")
@@ -287,14 +292,11 @@ class TestSessionWiring:
       get_messaging_channel=lambda: channel,
     )
 
-    async def go():
-      await session.message_handler(b'{"type":"setUiStream","enabled":true}')
-      assert session.ui_stream_runner is not None
-      await asyncio.sleep(0.05)
-      await session.message_handler(b'{"type":"setUiStream","enabled":false}')
-      assert session.ui_stream_runner is None
-
-    asyncio.run(go())
+    session.message_handler(b'{"type":"setUiStream","enabled":true}')
+    assert session.ui_stream_runner is not None
+    await asyncio.sleep(0.05)
+    session.message_handler(b'{"type":"setUiStream","enabled":false}')
+    assert session.ui_stream_runner is None
 
     assert len(channel.sent) >= 1
     frame = json.loads(channel.sent[0])

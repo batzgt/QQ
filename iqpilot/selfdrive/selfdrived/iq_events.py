@@ -155,14 +155,6 @@ class IQEvents(EventsBase):
 EVENTS_IQ_TYPE = dict[int, dict[str, Alert | AlertCallbackType]]
 
 _GUIDANCE_EVENTS: EVENTS_IQ_TYPE = {
-  EventNameIQ.lateralEdgeBlocked: {
-    ET.WARNING: Alert(
-      "Lane Change Blocked",
-      "Road edge detected",
-      AlertStatus.userPrompt, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.prompt, .1),
-  },
-
   EventNameIQ.speedLimitActive: {
     ET.WARNING: speed_limit_adjust_alert,
   },

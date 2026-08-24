@@ -14,13 +14,11 @@ from iqpilot.selfdrive.controls.lib.helpers.lane_change import (
   AutoLaneChangeMode,
   NavExitLaneChangeController,
 )
-from iqpilot.selfdrive.controls.lib.helpers.lateral_edge_guard import LateralEdgeGuard
 from iqpilot.selfdrive.controls.lib.helpers.lane_turn import IQNavTurnController
 
 LaneChangeState = log.LaneChangeState
 LaneChangeDirection = log.LaneChangeDirection
 TurnDirection = custom.IQTurnSignalDirection
-LateralEdgeBlock = custom.IQLateralEdgeBlock
 NavManeuverPhase = custom.IQNavState.ManeuverPhase
 
 LANE_CHANGE_SPEED_MIN = 20 * CV.MPH_TO_MS
@@ -107,8 +105,6 @@ class DesireHelper:
     self.alc = IQLaneSwapController(self)
     self.lane_turn_controller = IQNavTurnController(self)
     self.nav_exit = NavExitLaneChangeController(_read_enable_bsm())
-    self.lateral_edge_guard = LateralEdgeGuard()
-    self.lateral_edge_block = LateralEdgeBlock.none
     self.lane_turn_direction = TurnDirection.none
     self.nav_turn_direction = TurnDirection.none
     self.turn_desire_stop_timer = 0.0
@@ -178,8 +174,6 @@ class DesireHelper:
   def _step_pre_lane_change(self, one_blinker: bool, nav_exit_active: bool, below_speed: bool) -> None:
     self._refresh_requested_direction(one_blinker, nav_exit_active)
     blindspot_detected = _blindspot_matches(self._last_carstate, self.lane_change_direction)
-    self.lateral_edge_block = self.lateral_edge_guard.block_for_direction(self.lane_change_direction)
-    lateral_edge_blocked = self.lateral_edge_block != LateralEdgeBlock.none
     steering_ready = _steering_nudge_matches(self._last_carstate, self.lane_change_direction)
     nav_auto_start = nav_exit_active and self.nav_exit.auto_allowed
 
@@ -188,7 +182,7 @@ class DesireHelper:
 
     if (not (one_blinker or nav_exit_active)) or below_speed:
       self._clear_lane_change()
-    elif allowed_to_launch and not blindspot_detected and not lateral_edge_blocked:
+    elif allowed_to_launch and not blindspot_detected:
       self.lane_change_state = LaneChangeState.laneChangeStarting
 
   def _step_lane_change_starting(self, lane_change_prob: float) -> None:
@@ -275,8 +269,6 @@ class DesireHelper:
 
   def update(self, carstate, lateral_active, lane_change_prob, nav_state=None, modeldata=None, radar_state=None):
     self._last_carstate = carstate
-    self.lateral_edge_guard.update(modeldata, carstate.vEgo, DT_MDL)
-    self.lateral_edge_block = LateralEdgeBlock.none
     one_blinker = carstate.leftBlinker != carstate.rightBlinker
     below_speed = carstate.vEgo < LANE_CHANGE_SPEED_MIN
     nav_exit_active = self._refresh_turn_overrides(carstate, nav_state)

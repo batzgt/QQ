@@ -7,17 +7,19 @@ import av
 
 from iqpilot.cereal import messaging
 from iqpilot.selfdrive.ui.soundd import SAMPLE_RATE as SOUND_SAMPLE_RATE
-from iqpilot.system.webrtc.device.audio import WEBRTC_AUDIO_PTIME, WEBRTC_AUDIO_SERVICE
+
+
+WEBRTC_AUDIO_SERVICE = "webrtcAudioData"
+WEBRTC_AUDIO_PTIME = 0.020
 
 
 class AudioInputOpusProducer:
-  """Micd PCM -> 48 kHz Opus payloads for libdatachannel's RTP packetizer."""
-
   def __init__(self) -> None:
     self._sock = messaging.sub_sock("rawAudioData", conflate=False)
     self._pcm = bytearray()
     self._source_rate = 16_000
     self._next_pts = 0
+    self._packet_pts = 0
     self._pending: deque[tuple[bytes, int]] = deque()
     self._enabled = True
     self._resampler = av.AudioResampler(format="fltp", layout="mono", rate=48_000)
@@ -65,13 +67,22 @@ class AudioInputOpusProducer:
         frame.time_base = Fraction(1, 48_000)
         self._next_pts += frame.samples
         for packet in self._encoder.encode(frame):
-          self._pending.append((bytes(packet), int(packet.pts or 0)))
+          self._pending.append((bytes(packet), self._packet_pts))
+          self._packet_pts += int(packet.duration or frame.samples)
     return self._pending.popleft()
 
 
-class IncomingOpusCerealProxy:
-  """libdatachannel Opus payloads -> soundd-compatible PCM cereal messages."""
+class DebugAudioOpusProducer(AudioInputOpusProducer):
+  async def _read_pcm_frame(self) -> av.AudioFrame:
+    samples = int(WEBRTC_AUDIO_PTIME * self._source_rate)
+    await asyncio.sleep(WEBRTC_AUDIO_PTIME)
+    frame = av.AudioFrame(format="s16", layout="mono", samples=samples)
+    frame.planes[0].update(bytes(samples * 2))
+    frame.sample_rate = self._source_rate
+    return frame
 
+
+class IncomingOpusCerealProxy:
   def __init__(self, track) -> None:
     self._loop = asyncio.get_running_loop()
     self._queue: asyncio.Queue[bytes] = asyncio.Queue(maxsize=32)

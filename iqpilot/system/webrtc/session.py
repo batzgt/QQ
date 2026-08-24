@@ -14,7 +14,6 @@ from iqpilot.system.webrtc.webrtcd import CerealIncomingMessageProxy, CerealOutg
 
 
 def _default_route_ip() -> str | None:
-  """Use the interface the kernel will actually use for Internet/relay media."""
   sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
   try:
     sock.connect(("8.8.8.8", 53))
@@ -25,9 +24,7 @@ def _default_route_ip() -> str | None:
     sock.close()
 
 
-class LibdatachannelBitrateController:
-  """Loss-driven bitrate control using native RTCP receiver reports."""
-
+class LivestreamBitrateController:
   bitrates = [500_000, 1_500_000, int(os.environ.get("STREAM_BITRATE", 5_000_000))]
   label_to_bitrate = {"low": bitrates[0], "med": bitrates[1], "high": bitrates[2]}
   sample_interval = 0.2
@@ -103,45 +100,45 @@ class LibdatachannelBitrateController:
           self._publish(self.bitrates[self._level])
 
 
-class StreamSessionLibdatachannel:
-  """IQ.Pilot's libdatachannel stream path. It preserves Konn3kt signalling and controls."""
-
-  shared_pub_master = DynamicPubMaster([])
+class StreamSession:
+  shared_pub_master: DynamicPubMaster | None = None
 
   def __init__(self, sdp: str, cameras: list[str], incoming_services: list[str], outgoing_services: list[str],
                ice_servers: list[dict[str, Any]] | None = None, debug_mode: bool = False, ui_stream: bool = False):
-    from iqpilot.system.webrtc.device.video_ldc import LiveStreamVideoStreamTrack
-    from iqpilot.system.webrtc.teleoprtc_ldc.builder import WebRTCAnswerBuilder
-    from iqpilot.system.webrtc.teleoprtc_ldc.info import parse_info_from_offer
+    from iqpilot.system.webrtc.device.native_audio import AudioInputOpusProducer, DebugAudioOpusProducer
+    from iqpilot.system.webrtc.device.native_video import DebugVideoStreamTrack, LiveStreamVideoStreamTrack
+    from iqpilot.system.webrtc.rtc.builder import WebRTCAnswerBuilder
+    from iqpilot.system.webrtc.rtc.info import parse_info_from_offer
 
     config = parse_info_from_offer(sdp)
     if len(cameras) != config.n_expected_camera_tracks:
       raise ValueError("Incoming stream has misconfigured number of video tracks")
-    if debug_mode:
-      raise ValueError("libdatachannel debug tracks are not supported")
-
     builder = WebRTCAnswerBuilder(sdp, bind_address=_default_route_ip(), ice_servers=ice_servers or [])
-    self.video_tracks = [LiveStreamVideoStreamTrack(camera) for camera in cameras]
+    video_track_type = DebugVideoStreamTrack if debug_mode else LiveStreamVideoStreamTrack
+    self.video_tracks = [video_track_type(camera) for camera in cameras]
     for camera, track in zip(cameras, self.video_tracks, strict=True):
       builder.add_video_stream(camera, track)
 
-    # The browser uses a single sendrecv audio m-line. libdatachannel's Python binding
-    # currently cannot negotiate that bidirectional track reliably, so this experimental
-    # transport deliberately remains video/control-only. The default aiortc path keeps
-    # both audio directions until the native duplex path passes the same integration test.
-    self.audio_output = None
+    audio_track_type = DebugAudioOpusProducer if debug_mode else AudioInputOpusProducer
+    self.audio_output = audio_track_type() if config.expected_audio_track else None
+    if self.audio_output is not None:
+      builder.add_audio_stream(self.audio_output)
+    if config.incoming_audio_track:
+      builder.offer_to_receive_audio_stream()
     self.stream = builder.stream()
 
     self.identifier = str(uuid.uuid4())
     self.incoming_bridge_services = incoming_services
-    self.incoming_bridge = CerealIncomingMessageProxy(self.shared_pub_master) if incoming_services else None
+    if incoming_services and self.shared_pub_master is None:
+      StreamSession.shared_pub_master = DynamicPubMaster([])
+    self.incoming_bridge = CerealIncomingMessageProxy(self.shared_pub_master) if self.shared_pub_master is not None and incoming_services else None
     self.outgoing_bridge = CerealOutgoingMessageProxy(messaging.SubMaster(outgoing_services)) if outgoing_services else None
     self.outgoing_bridge_runner = CerealProxyRunner(self.outgoing_bridge) if self.outgoing_bridge is not None else None
     self.ui_stream_requested = ui_stream
     self.ui_stream_runner: CerealProxyRunner | None = None
     self.audio_input_proxy = None
-    self.audio_recv_requested = False
-    self.bitrate_controller = LibdatachannelBitrateController(self.stream.get_receiver_report_stats)
+    self.audio_recv_requested = config.incoming_audio_track
+    self.bitrate_controller = LivestreamBitrateController(self.stream.get_receiver_report_stats)
     self.run_task: asyncio.Task | None = None
     self._cleanup_lock = asyncio.Lock()
     self._cleanup_done = False
@@ -216,7 +213,7 @@ class StreamSessionLibdatachannel:
         if self.ui_stream_requested:
           self.set_ui_stream(True)
       if self.audio_recv_requested and self.stream.has_incoming_audio_track():
-        from iqpilot.system.webrtc.device.audio_ldc import IncomingOpusCerealProxy
+        from iqpilot.system.webrtc.device.native_audio import IncomingOpusCerealProxy
         self.audio_input_proxy = IncomingOpusCerealProxy(self.stream.get_incoming_audio_track())
         self.audio_input_proxy.start()
       self.bitrate_controller.start()

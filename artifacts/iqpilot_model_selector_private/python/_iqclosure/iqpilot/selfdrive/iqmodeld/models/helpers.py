@@ -29,6 +29,7 @@ _ACTIVE_BUNDLE_KEY = "ModelManager_ActiveBundle"
 _MODELS_CACHE_KEY = "ModelManager_ModelsCache"
 _RUNNER_CACHE_KEY = "ModelRunnerTypeCache"
 _DOWNLOAD_INDEX_KEY = "ModelManager_DownloadIndex"
+_PENDING_INDEX_KEY = "ModelManager_PendingIndex"
 _PENDING_MODEL_RESTORE_FILE = "/data/k3_pending_model_restore"
 _STOCK_RUNNER = int(Runner.stock)
 _TINYGRAD_RUNNER = int(Runner.tinygrad)
@@ -40,7 +41,6 @@ _DEFAULT_BUNDLE_REF = "default"
 
 
 def get_default_model_bundle(_bundles):
-  """Legacy compatibility hook: stock default is preinstalled, not a manifest bundle."""
   return None
 
 
@@ -227,6 +227,7 @@ def select_default_model(params: Params = None) -> None:
   bundle_dict = _load_default_bundle_dict()
   ensure_default_model_files(bundle_dict)
   params.remove(_DOWNLOAD_INDEX_KEY)
+  params.remove(_PENDING_INDEX_KEY)
   params.put(_ACTIVE_BUNDLE_KEY, bundle_dict)
   params.remove(_RUNNER_CACHE_KEY)
   params.put(_RUNNER_CACHE_KEY, _TINYGRAD_RUNNER)
@@ -239,10 +240,13 @@ def select_default_model(params: Params = None) -> None:
 
 def seed_default_bundle_if_unset(params: Params = None) -> None:
   params = Params() if params is None else params
-  if params.get(_ACTIVE_BUNDLE_KEY) or params.get(_DOWNLOAD_INDEX_KEY) is not None:
+  if params.get(_ACTIVE_BUNDLE_KEY):
     return
+  queued_download = params.get(_DOWNLOAD_INDEX_KEY)
   try:
     select_default_model(params)
+    if queued_download is not None:
+      params.put(_DOWNLOAD_INDEX_KEY, queued_download)
     cloudlog.warning("default_model: seeded Default (CD210) as active bundle")
   except Exception as e:
     cloudlog.exception(f"default_model: failed to seed default bundle: {e}")

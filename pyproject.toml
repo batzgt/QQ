@@ -27,17 +27,12 @@ dependencies = [
   "msgq",
   "iqdbc",
   "panda",
-  "teleoprtc",
   "tinygrad",
 
   # body / webrtcd
   "aiohttp",
-  "aiortc",
+  "av",
   "libdatachannel-py>=2026.1.0.dev2",
-  # aiortc does not put an upper bound on pyopenssl and is now incompatible
-  # with the latest release
-  "pyopenssl < 24.3.0",
-  "pyaudio",
 
   # panda
   "libusb1",
@@ -100,7 +95,6 @@ testing = [
 ]
 
 dev = [
-  "av",
   "azure-identity",
   "azure-storage-blob",
   "dictdiffer",
@@ -255,5 +249,4 @@ not-subscriptable = "ignore"
 msgq = { path = "artifacts/package_sources/msgq" }
 iqdbc = { path = "artifacts/package_sources/iqdbc" }
 panda = { path = "artifacts/package_sources/panda" }
-teleoprtc = { path = "artifacts/package_sources/teleoprtc" }
 tinygrad = { path = "artifacts/package_sources/tinygrad" }

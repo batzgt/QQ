@@ -26,6 +26,22 @@ from iqpilot.system.version import get_build_metadata
 from iqpilot.system.hardware.hw import Paths
 
 
+MODELD_WATCHDOG_TIMEOUT = 30.0
+
+
+def update_modeld_watchdog(deadline: float | None, started: bool, model_updated: bool, process, now: float) -> float | None:
+  running = process.proc is not None and process.proc.is_alive()
+  if not started or not running:
+    return None
+  if deadline is None or model_updated:
+    return now + MODELD_WATCHDOG_TIMEOUT
+  if now >= deadline:
+    cloudlog.error("iqmodeld is alive but not publishing modelV2; restarting")
+    process.restart()
+    return now + MODELD_WATCHDOG_TIMEOUT
+  return deadline
+
+
 def manager_init() -> None:
   heal_param_perms()
   save_bootlog()
@@ -55,16 +71,22 @@ def manager_init() -> None:
     params.put_bool("RecordFront", True)
 
   # set unset params to their default value
+  initialized_defaults = {}
   for k in params.all_keys():
     default_value = params.get_default_value(k)
     if default_value is not None and params.get(k) is None:
       params.put(k, default_value)
+    if default_value is not None:
+      initialized_defaults[k] = params.get(k)
 
   try:
     from iqpilot.selfdrive.iqmodeld.models.helpers import seed_default_bundle_if_unset
     seed_default_bundle_if_unset(params)
   except Exception:
     cloudlog.exception("failed to seed default model bundle")
+  for k, value in initialized_defaults.items():
+    if value is not None and params.get(k) is None:
+      params.put(k, value)
 
   # Create folders needed for msgq
   try:
@@ -142,7 +164,7 @@ def manager_thread() -> None:
     ignore.append("pandad")
   ignore += [x for x in os.getenv("BLOCK", "").split(",") if len(x) > 0]
 
-  sm = messaging.SubMaster(['deviceState', 'carParams', 'pandaStates'], poll='deviceState')
+  sm = messaging.SubMaster(['deviceState', 'carParams', 'pandaStates', 'modelV2'], poll='deviceState')
   pm = messaging.PubMaster(['managerState'])
 
   write_onroad_params(False, params)
@@ -151,6 +173,7 @@ def manager_thread() -> None:
   started_prev = False
   ignition_prev = False
   running_prev = None
+  modeld_deadline = None
 
   while True:
     sm.update(1000)
@@ -178,6 +201,9 @@ def manager_thread() -> None:
     ignition_prev = ignition
 
     ensure_running(managed_processes.values(), started, params=params, CP=sm['carParams'], not_run=ignore)
+    modeld_deadline = update_modeld_watchdog(
+      modeld_deadline, started, sm.updated['modelV2'], managed_processes['iqmodeld'], time.monotonic()
+    )
 
     # print only on change (reprinting every loop floods the shared tmux); always logged
     procs = [p for p in managed_processes.values() if p.proc]

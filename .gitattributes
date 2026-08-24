@@ -50,3 +50,4 @@ iqpilot/selfdrive/assets/icons_mici/settings/vehicle.png -filter -diff -merge -t
 iqpilot/selfdrive/assets/icons_mici/speedometer.png -filter -diff -merge -text
 
 iqpilot/selfdrive/assets/icons/iq/*.png -filter -diff -merge -text
+artifacts/runtime_wheels/*.whl -filter -diff -merge -text
