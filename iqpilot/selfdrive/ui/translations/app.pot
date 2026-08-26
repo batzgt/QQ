@@ -1830,6 +1830,31 @@ msgstr ""
 msgid "power off"
 msgstr ""
 
+#: openpilot/selfdrive/ui/mici/layouts/settings/device.py:111
+#, python-brace-format
+msgid "disable force offroad"
+msgstr ""
+
+#: openpilot/selfdrive/ui/mici/layouts/settings/device.py:111
+#, python-brace-format
+msgid "force offroad"
+msgstr ""
+
+#: openpilot/selfdrive/ui/mici/layouts/settings/device.py:116
+#, python-brace-format
+msgid ""
+"disable\n"
+"force offroad"
+msgstr ""
+
+#: openpilot/selfdrive/ui/mici/layouts/settings/device.py:99
+#: openpilot/selfdrive/ui/mici/layouts/settings/device.py:116
+#, python-brace-format
+msgid ""
+"force\n"
+"offroad"
+msgstr ""
+
 #: openpilot/selfdrive/ui/mici/layouts/onboarding.py:100
 #, python-brace-format
 msgid ""

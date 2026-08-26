@@ -3303,6 +3303,20 @@ msgstr "기기"
 msgid "device ID"
 msgstr "기기 ID"
 
+#: openpilot/selfdrive/ui/mici/layouts/settings/device.py:116
+#, python-brace-format
+msgid ""
+"disable\n"
+"force offroad"
+msgstr ""
+"강제 오프로드\n"
+"해제"
+
+#: openpilot/selfdrive/ui/mici/layouts/settings/device.py:111
+#, python-brace-format
+msgid "disable force offroad"
+msgstr "강제 오프로드 해제"
+
 #: openpilot/selfdrive/ui/mici/layouts/settings/network/network_layout.py:56
 #: openpilot/selfdrive/ui/mici/layouts/settings/network/network_layout.py:190
 #: openpilot/selfdrive/ui/mici/layouts/settings/network/network_layout.py:199
@@ -3460,10 +3474,25 @@ msgstr "\"{}\"용"
 msgid "for private branch updates"
 msgstr "비공개 브랜치 업데이트용"
 
+#: openpilot/selfdrive/ui/mici/layouts/settings/device.py:99
+#: openpilot/selfdrive/ui/mici/layouts/settings/device.py:116
+#, python-brace-format
+msgid ""
+"force\n"
+"offroad"
+msgstr ""
+"강제\n"
+"오프로드"
+
 #: openpilot/selfdrive/ui/mici/layouts/settings/display.py:28
 #, python-brace-format
 msgid "force mici UI"
 msgstr "mici UI 강제"
+
+#: openpilot/selfdrive/ui/mici/layouts/settings/device.py:111
+#, python-brace-format
+msgid "force offroad"
+msgstr "강제 오프로드"
 
 #: openpilot/selfdrive/ui/mici/layouts/settings/network/wifi_ui.py:247
 #, python-brace-format

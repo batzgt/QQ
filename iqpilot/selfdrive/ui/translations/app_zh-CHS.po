@@ -3260,6 +3260,20 @@ msgstr "设备"
 msgid "device ID"
 msgstr "设备 ID"
 
+#: openpilot/selfdrive/ui/mici/layouts/settings/device.py:116
+#, python-brace-format
+msgid ""
+"disable\n"
+"force offroad"
+msgstr ""
+"关闭\n"
+"强制驻车"
+
+#: openpilot/selfdrive/ui/mici/layouts/settings/device.py:111
+#, python-brace-format
+msgid "disable force offroad"
+msgstr "关闭强制驻车"
+
 #: openpilot/selfdrive/ui/mici/layouts/settings/network/network_layout.py:56
 #: openpilot/selfdrive/ui/mici/layouts/settings/network/network_layout.py:190
 #: openpilot/selfdrive/ui/mici/layouts/settings/network/network_layout.py:199
@@ -3417,10 +3431,25 @@ msgstr "用于“{}”"
 msgid "for private branch updates"
 msgstr "用于私有分支更新"
 
+#: openpilot/selfdrive/ui/mici/layouts/settings/device.py:99
+#: openpilot/selfdrive/ui/mici/layouts/settings/device.py:116
+#, python-brace-format
+msgid ""
+"force\n"
+"offroad"
+msgstr ""
+"强制\n"
+"驻车"
+
 #: openpilot/selfdrive/ui/mici/layouts/settings/display.py:28
 #, python-brace-format
 msgid "force mici UI"
 msgstr "强制使用 mici 界面"
+
+#: openpilot/selfdrive/ui/mici/layouts/settings/device.py:111
+#, python-brace-format
+msgid "force offroad"
+msgstr "强制驻车"
 
 #: openpilot/selfdrive/ui/mici/layouts/settings/network/wifi_ui.py:247
 #, python-brace-format

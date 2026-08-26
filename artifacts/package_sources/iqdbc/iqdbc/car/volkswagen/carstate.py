@@ -6,9 +6,10 @@ import os
 import math
 import time
 from iqdbc.can import CANParser
-from iqdbc.car import Bus, structs
+from iqdbc.car import DT_CTRL, Bus, structs
 from iqdbc.car.interfaces import CarStateBase
 from iqdbc.car.common.conversions import Conversions as CV
+from iqdbc.car.common.filter_simple import FirstOrderFilter
 from iqdbc.car.volkswagen.values import CAR, DBC, CanBus, NetworkLocation, RADAR_DISABLE_STATE, TransmissionType, GearShifter, \
                                                       CarControllerParams, VolkswagenFlags, VolkswagenFlagsIQ
 from iqdbc.car.volkswagen.speed_limit_manager import SpeedLimitManager
@@ -28,6 +29,7 @@ class CarState(CarStateBase):
   CRUISE_FAULT_LATERAL_DISABLE_FRAMES = 20
   MEB_TEMP_CRUISE_FAULT = 6
   MEB_TOLERANCE_MAX = 100
+  DRIVER_TORQUE_TAU = 0.10
 
   def __init__(self, CP, CP_IQ):
     from iqpilot.system.proprietary_runtime._verified_import import import_verified_module
@@ -37,6 +39,7 @@ class CarState(CarStateBase):
     self.frame = 0
     self.eps_init_complete = False
     self.CCP = CarControllerParams(CP)
+    self.driver_torque_filter = FirstOrderFilter(0.0, self.DRIVER_TORQUE_TAU, DT_CTRL)
     self.button_states = {button.event_type: False for button in self.CCP.BUTTONS}
     self.esp_hold_confirmation = False
     self.upscale_lead_car_signal = False
@@ -323,7 +326,7 @@ class CarState(CarStateBase):
     ret.steeringRateDeg = pt_cp.vl["LWI_01"]["LWI_Lenkradw_Geschw"] * (1, -1)[int(pt_cp.vl["LWI_01"]["LWI_VZ_Lenkradw_Geschw"])]
     ret.steeringTorque = pt_cp.vl["LH_EPS_03"]["EPS_Lenkmoment"] * (1, -1)[int(pt_cp.vl["LH_EPS_03"]["EPS_VZ_Lenkmoment"])]
     driver_override_threshold = self._iq_lvbs_alc.vw_driver_override_threshold_cnm(self, "mqb", self.CCP.STEER_DRIVER_ALLOWANCE)
-    ret.steeringPressed = abs(ret.steeringTorque) > driver_override_threshold
+    ret.steeringPressed = abs(self.driver_torque_filter.update(ret.steeringTorque)) > driver_override_threshold
 
     self.curvature = -pt_cp.vl["QFK_01"]["Curvature"] * (1, -1)[int(pt_cp.vl["QFK_01"]["Curvature_VZ"])]
     ret.steeringCurvature = self.curvature

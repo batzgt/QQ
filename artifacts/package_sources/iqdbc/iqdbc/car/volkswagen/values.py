@@ -118,7 +118,7 @@ class CarControllerParams:
     if CP.flags & VolkswagenFlags.PQ:
       self.LDW_STEP = 5                   # LDW_1 message frequency 20Hz
       self.ACC_HUD_STEP = 4               # ACC_GRA_Anzeige frequency 25Hz
-      self.STEER_DRIVER_ALLOWANCE = 80    # Driver intervention threshold 0.8 Nm
+      self.STEER_DRIVER_ALLOWANCE = 80
       self.STEER_DELTA_UP = 6
       self.STEER_DELTA_DOWN = 10
 
@@ -147,11 +147,12 @@ class CarControllerParams:
     elif CP.flags & (VolkswagenFlags.MEB | VolkswagenFlags.MQB_EVO):
       self.LDW_STEP = 10
       self.ACC_HUD_STEP = 6
-      self.STEER_DRIVER_ALLOWANCE = 60
+      self.STEER_DRIVER_ALLOWANCE = 80
       self.STEER_DRIVER_MAX = 300
       self.STEERING_POWER_MAX = 90
       self.STEERING_POWER_MIN = 4
       self.STEERING_POWER_STEP = 2
+      self.CURVATURE_HANDOFF_RATE = 0.20
 
       self.CURVATURE_PID: structs.CarParams.LateralPIDTuning = structs.CarParams.LateralPIDTuning(
         kpBP=[10., 40.],
@@ -204,7 +205,7 @@ class CarControllerParams:
       self.hca_status_values = can_define.dv["LH_EPS_03"]["EPS_HCA_Status"]
 
       if CP.flags & VolkswagenFlags.MLB:
-        self.STEER_DRIVER_ALLOWANCE = 60  # Driver intervention threshold 0.6 Nm
+        self.STEER_DRIVER_ALLOWANCE = 80  # Driver intervention threshold 0.8 Nm
         self.STEER_DELTA_UP = 9  # Max HCA reached in 0.66s (STEER_MAX / (50Hz * 0.66))
         self.STEER_DELTA_DOWN = 10  # Min HCA reached in 0.60s (STEER_MAX / (50Hz * 0.60))
         self.ACC_HUD_TEXT_STEP = int(2.0 / DT_CTRL)  # ACC_02 primary display text dwell time
@@ -231,7 +232,7 @@ class CarControllerParams:
         self.ACC_HUD_TEXT_DISTANCE = {1: 2, 2: 3, 3: 4, 4: 5}  # follow distance bars to display text
 
       else:
-        self.STEER_DRIVER_ALLOWANCE = 80    # Driver intervention threshold 0.8 Nm
+        self.STEER_DRIVER_ALLOWANCE = 80
         self.STEER_DELTA_UP = 4             # Max HCA reached in 1.50s (STEER_MAX / (50Hz * 1.50))
         self.STEER_DELTA_DOWN = 10          # Min HCA reached in 0.60s (STEER_MAX / (50Hz * 0.60))
 

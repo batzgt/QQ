@@ -19,8 +19,17 @@ async def test_native_video_audio_and_data_channel():
 
   async def connect(offer):
     nonlocal answer_session
-    answer_session = StreamSession(offer.sdp, offer.video, [], [], [], debug_mode=True)
+    browser_offer = offer.sdp.replace("profile-level-id=42e01f", "profile-level-id=640c1f", 1)
+    audio_offset = browser_offer.index("m=audio")
+    browser_offer = browser_offer[:audio_offset] + browser_offer[audio_offset:].replace(
+      "a=recvonly",
+      "a=sendrecv\r\na=msid:ios-microphone ios-audio-track\r\na=ssrc:123456 cname:ios-audio\r\na=ssrc:123456 msid:ios-microphone ios-audio-track",
+      1,
+    )
+    answer_session = StreamSession(browser_offer, offer.video, [], [], [], debug_mode=True)
     answer = await answer_session.get_answer()
+    assert not any(line.startswith("m=video 0 ") for line in answer.sdp.splitlines())
+    assert answer_session.stream._track_state[0][0] is answer_session.stream._negotiated_tracks["road"]
     answer_session.start()
     return RTCSessionDescription(answer.sdp, answer.type)
 
@@ -56,9 +65,16 @@ async def test_native_duplex_audio_negotiation():
 
   async def connect(offer):
     nonlocal answer_session
-    sendrecv_offer = offer.sdp.replace("a=recvonly", "a=sendrecv", 1)
+    sendrecv_offer = offer.sdp.replace(
+      "a=recvonly",
+      "a=sendrecv\r\na=msid:ios-microphone ios-audio-track\r\na=ssrc:123456 cname:ios-audio\r\na=ssrc:123456 msid:ios-microphone ios-audio-track",
+      1,
+    )
     answer_session = StreamSession(sendrecv_offer, offer.video, [], [], [], debug_mode=True)
     answer = await answer_session.get_answer()
+    assert "ios-microphone" not in answer.sdp
+    assert "ios-audio-track" not in answer.sdp
+    assert answer.sdp.count("a=msid:audio audio") == 1
     answer_session.start()
     return RTCSessionDescription(answer.sdp, answer.type)
 

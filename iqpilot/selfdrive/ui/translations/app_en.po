@@ -3411,6 +3411,20 @@ msgstr "device"
 msgid "device ID"
 msgstr "device ID"
 
+#: openpilot/selfdrive/ui/mici/layouts/settings/device.py:116
+#, python-brace-format
+msgid ""
+"disable\n"
+"force offroad"
+msgstr ""
+"disable\n"
+"force offroad"
+
+#: openpilot/selfdrive/ui/mici/layouts/settings/device.py:111
+#, python-brace-format
+msgid "disable force offroad"
+msgstr "disable force offroad"
+
 #: openpilot/selfdrive/ui/mici/layouts/settings/network/network_layout.py:56
 #: openpilot/selfdrive/ui/mici/layouts/settings/network/network_layout.py:190
 #: openpilot/selfdrive/ui/mici/layouts/settings/network/network_layout.py:199
@@ -3568,10 +3582,25 @@ msgstr "for \"{}\""
 msgid "for private branch updates"
 msgstr "for private branch updates"
 
+#: openpilot/selfdrive/ui/mici/layouts/settings/device.py:99
+#: openpilot/selfdrive/ui/mici/layouts/settings/device.py:116
+#, python-brace-format
+msgid ""
+"force\n"
+"offroad"
+msgstr ""
+"force\n"
+"offroad"
+
 #: openpilot/selfdrive/ui/mici/layouts/settings/display.py:28
 #, python-brace-format
 msgid "force mici UI"
 msgstr "force mici UI"
+
+#: openpilot/selfdrive/ui/mici/layouts/settings/device.py:111
+#, python-brace-format
+msgid "force offroad"
+msgstr "force offroad"
 
 #: openpilot/selfdrive/ui/mici/layouts/settings/network/wifi_ui.py:247
 #, python-brace-format

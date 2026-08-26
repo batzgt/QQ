@@ -247,6 +247,22 @@ class TestMonitoring:
     dm._update_states(ds, [0., 0., 0.], 20.0, True, False)
     assert dm.wheel_on_right
 
+  def test_state_update_forces_rhd(self):
+    dm = DriverMonitoring(force_rhd=True)
+    dm.wheel_on_right_last = False
+    dm.wheelpos.prob_offseter.filtered_stat.M = 0.0
+    dm.wheelpos.prob_offseter.filtered_stat.n = dm.settings._WHEELPOS_FILTER_MIN_COUNT + 1
+    ds = log.DriverStateV2.new_message()
+    ds.wheelOnRightProb = 0.0
+    set_driver_data(ds.rightDriverData)
+
+    dm._update_states(ds, [0., 0., 0.], 20.0, True, False)
+
+    assert dm.wheel_on_right
+    assert dm.face_detected
+    assert dm.wheelpos.prob_offseter.filtered_stat.n == dm.settings._WHEELPOS_FILTER_MIN_COUNT + 1
+    assert dm.get_state_packet().driverMonitoringState.isRHD
+
   def test_state_update_rejects_incomplete_driver_data(self):
     dm = DriverMonitoring()
     dm._update_states(log.DriverStateV2.new_message(), [0., 0., 0.], 0.0, False, False)

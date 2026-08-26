@@ -32,7 +32,7 @@ class TestVolkswagenMlbSafetyBase(common.CarSafetyTest, common.DriverTorqueSteer
   MAX_TORQUE_LOOKUP = [0], [300]
   MAX_RT_DELTA = 169
 
-  DRIVER_TORQUE_ALLOWANCE = 60
+  DRIVER_TORQUE_ALLOWANCE = 80
   DRIVER_TORQUE_FACTOR = 3
 
   # Wheel speeds _esp_03_msg

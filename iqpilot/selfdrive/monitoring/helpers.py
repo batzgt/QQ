@@ -145,7 +145,7 @@ def face_orientation_from_net(angles_desc, pos_desc, rpy_calib):
 
 
 class DriverMonitoring:
-  def __init__(self, rhd_saved=False, settings=None, always_on=False):
+  def __init__(self, rhd_saved=False, settings=None, always_on=False, force_rhd=False):
     # init policy settings
     self.settings = settings if settings is not None else DRIVER_MONITOR_SETTINGS(device_type=HARDWARE.get_device_type())
 
@@ -158,6 +158,7 @@ class DriverMonitoring:
     self.blink = DriverBlink()
 
     self.always_on = always_on
+    self.force_rhd = force_rhd
     self.distracted_types = []
     self.driver_distracted = False
     self.driver_distraction_filter = FirstOrderFilter(0., self.settings._DISTRACTED_FILTER_TS, self.settings._DT_DMON)
@@ -268,18 +269,20 @@ class DriverMonitoring:
   def _update_states(self, driver_state, cal_rpy, car_speed, op_engaged, standstill, demo_mode=False):
     rhd_pred = driver_state.wheelOnRightProb
     # calibrates only when there's movement and either face detected
-    if car_speed > self.settings._WHEELPOS_CALIB_MIN_SPEED and (driver_state.leftDriverData.faceProb > self.settings._FACE_THRESHOLD or
+    if not self.force_rhd and car_speed > self.settings._WHEELPOS_CALIB_MIN_SPEED and (driver_state.leftDriverData.faceProb > self.settings._FACE_THRESHOLD or
                                           driver_state.rightDriverData.faceProb > self.settings._FACE_THRESHOLD):
       self.wheelpos.prob_offseter.push_and_update(rhd_pred)
 
     self.wheelpos.prob_calibrated = self.wheelpos.prob_offseter.filtered_stat.n > self.settings._WHEELPOS_FILTER_MIN_COUNT
 
-    if self.wheelpos.prob_calibrated or demo_mode:
+    if self.force_rhd:
+      self.wheel_on_right = True
+    elif self.wheelpos.prob_calibrated or demo_mode:
       self.wheel_on_right = self.wheelpos.prob_offseter.filtered_stat.M > self.settings._WHEELPOS_THRESHOLD
     else:
       self.wheel_on_right = self.wheel_on_right_default # use default/saved if calibration is unfinished
     # make sure no switching when engaged
-    if op_engaged and self.wheel_on_right_last is not None and self.wheel_on_right_last != self.wheel_on_right and not demo_mode:
+    if not self.force_rhd and op_engaged and self.wheel_on_right_last is not None and self.wheel_on_right_last != self.wheel_on_right and not demo_mode:
       self.wheel_on_right = self.wheel_on_right_last
     driver_data = driver_state.rightDriverData if self.wheel_on_right else driver_state.leftDriverData
     if not all(len(x) > 0 for x in (driver_data.faceOrientation, driver_data.facePosition,

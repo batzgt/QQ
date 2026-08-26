@@ -93,6 +93,33 @@ class EngagedConfirmationButton(BigButton):
     self.set_click_callback(lambda: _engaged_confirmation_click(callback, action_text, icon, exit_on_confirm=exit_on_confirm, red=red))
 
 
+class ForceOffroadButton(BigButton):
+  def __init__(self):
+    self._offroad_icon = gui_app.texture("icons/iq/square-parking.png", 64, 64)
+    super().__init__(tr("force\noffroad"), "", self._offroad_icon)
+    self.set_press_effect_enabled(False)
+    self._label.set_font_size(40)
+    self._label.set_line_height(0.95)
+    self.set_click_callback(self._on_click)
+    self._sync_from_params()
+
+  def _forced(self) -> bool:
+    return ui_state.params.get_bool("IQAlwaysOffroad")
+
+  def _on_click(self):
+    forced = self._forced()
+    action = tr("disable force offroad") if forced else tr("force offroad")
+    _engaged_confirmation_click(lambda: ui_state.params.put_bool("IQAlwaysOffroad", not forced),
+                                action, self._offroad_icon, exit_on_confirm=False)
+
+  def _sync_from_params(self):
+    self.set_text(tr("disable\nforce offroad") if self._forced() else tr("force\noffroad"))
+
+  def _update_state(self):
+    super()._update_state()
+    self._sync_from_params()
+
+
 class DeviceInfoLayoutMici(Widget):
   def __init__(self):
     super().__init__()
@@ -226,6 +253,7 @@ class DeviceLayoutMici(NavScroller):
       terms_btn,
       regulatory_btn,
       reset_calibration_btn,
+      ForceOffroadButton(),
       reboot_btn,
       self._power_off_btn,
     ])

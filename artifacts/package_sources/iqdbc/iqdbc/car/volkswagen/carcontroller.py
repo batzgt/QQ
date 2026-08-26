@@ -375,7 +375,9 @@ class CarController(CarControllerBase):
             self.LateralController.reset()
           if self.steering_power_last > 0:
             hca_enabled = True
-            apply_curvature = np.clip(CS.out.steeringCurvature, -self.CCP.CURVATURE_LIMITS.CURVATURE_MAX, self.CCP.CURVATURE_LIMITS.CURVATURE_MAX)
+            handoff_curvature = self.apply_curvature_last + (CS.out.steeringCurvature - self.apply_curvature_last) * self.CCP.CURVATURE_HANDOFF_RATE
+            apply_curvature = apply_std_curvature_limits(handoff_curvature, self.apply_curvature_last, CS.out.vEgoRaw, CS.out.steeringCurvature,
+                                                         CS.out.steeringPressed, self.CCP.STEER_STEP, True, self.CCP.CURVATURE_LIMITS)
             steering_power = max(self.steering_power_last - self.CCP.STEERING_POWER_STEP, 0)
           else:
             hca_enabled = False

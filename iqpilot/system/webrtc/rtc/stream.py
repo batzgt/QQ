@@ -83,6 +83,7 @@ class WebRTCBaseStream(abc.ABC):
     self._audio_track_state: List[Tuple[Track, Any, RtpPacketizationConfig]] = []
     self._receiver_reports: Dict[str, RtcpReceiverReport] = {}
     self._receiver_report_tracks: Dict[str, Tuple[Track, int]] = {}
+    self._negotiated_tracks: Dict[str, Track] = {}
 
     self.incoming_media_ready_event = asyncio.Event()
     self.messaging_channel_ready_event = asyncio.Event()
@@ -206,7 +207,11 @@ class WebRTCBaseStream(abc.ABC):
   def _add_producer_tracks(self, remote_sdp: Optional[str] = None):
     for track in self.outgoing_video_tracks:
       media, ssrc, payload_type, cname = self._make_video_media(track, remote_sdp or "")
-      rtc_track = self.peer_connection.add_track(media)
+      rtc_track = self._negotiated_tracks.get(media.mid())
+      if rtc_track is not None:
+        rtc_track.set_description(media)
+      else:
+        rtc_track = self.peer_connection.add_track(media)
 
       rtp_config = RtpPacketizationConfig(ssrc, cname, payload_type, H264RtpPacketizer.CLOCK_RATE)
       rtp_config.start_timestamp = random.randint(0, 0xFFFFFFFF)
@@ -232,6 +237,8 @@ class WebRTCBaseStream(abc.ABC):
         # same MID, which leaves libdatachannel stuck in signalling/ICE negotiation.
         rtc_track = self.incoming_audio_tracks[0]
         negotiated_media = rtc_track.description()
+        negotiated_media.clear_ssrcs()
+        negotiated_media.remove_attribute("msid")
         negotiated_media.add_ssrc(ssrc, cname, "audio", "audio")
         rtc_track.set_description(negotiated_media)
       else:
@@ -276,6 +283,7 @@ class WebRTCBaseStream(abc.ABC):
 
   def _on_incoming_track(self, track: Track):
     self._log_debug("got track: %s", track.mid())
+    self._negotiated_tracks[track.mid()] = track
     media_type = track.description().type()
     if media_type == "audio":
       if self.expected_incoming_audio:
@@ -478,6 +486,7 @@ class WebRTCBaseStream(abc.ABC):
     self._audio_track_state.clear()
     self._receiver_reports.clear()
     self._receiver_report_tracks.clear()
+    self._negotiated_tracks.clear()
 
   @abc.abstractmethod
   async def start(self) -> RTCSessionDescription:

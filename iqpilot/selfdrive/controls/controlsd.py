@@ -48,6 +48,7 @@ CTRL_FLAG_MISSING_INPUTS = 1 << 0
 CTRL_FLAG_RK_OVERRUN = 1 << 1
 SMOOTH_STEER_W0 = 46.0
 SMOOTH_STEER_ZETA = 1.0
+SMOOTH_STEER_HOLD_FRAMES = 50
 LAT_SMOOTH_SECONDS = 0.0
 
 
@@ -100,6 +101,7 @@ class Controls(IQControlsLayer):
     self.VM = VehicleModel(self.CP)
 
     self.smooth_steer = PT2Filter(SMOOTH_STEER_W0, SMOOTH_STEER_ZETA, DT_CTRL)
+    self.smooth_steer_inactive_frames = SMOOTH_STEER_HOLD_FRAMES
     self.is_curvature_car = self.CP.steerControlType == car.CarParams.SteerControlType.curvatureDEPRECATED
     if self.is_curvature_car and self.params.get("EnableSmoothSteer") is None:
       self.params.put_bool("EnableSmoothSteer", True)
@@ -235,7 +237,8 @@ class Controls(IQControlsLayer):
     else:
       new_desired_curvature = model_v2.action.desiredCurvature
 
-    if self.is_curvature_car and self.enable_smooth_steer and CC.latActive:
+    self.smooth_steer_inactive_frames = 0 if CC.latActive else self.smooth_steer_inactive_frames + 1
+    if self.is_curvature_car and self.enable_smooth_steer and self.smooth_steer_inactive_frames < SMOOTH_STEER_HOLD_FRAMES:
       new_desired_curvature = self.smooth_steer.update(new_desired_curvature)
     else:
       self.smooth_steer.reset(new_desired_curvature)

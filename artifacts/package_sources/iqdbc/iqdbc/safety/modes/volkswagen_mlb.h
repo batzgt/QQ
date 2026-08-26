@@ -175,7 +175,7 @@ static bool volkswagen_mlb_tx_hook(const CANPacket_t *msg) {
     .max_rt_delta = 169,           // 10 max rate up * 50Hz send rate * 250000 RT interval / 1000000 = 112.5 ; 112.5 * 1.5 for safety pad = 168.75
     .max_rate_up = 9,              // 5.0 Nm/s RoC limit (EPS rack has own soft-limit of 5.0 Nm/s)
     .max_rate_down = 10,           // 5.0 Nm/s RoC limit (EPS rack has own soft-limit of 5.0 Nm/s)
-    .driver_torque_allowance = 60,
+    .driver_torque_allowance = 80,
     .driver_torque_multiplier = 3,
     .type = TorqueDriverLimited,
   };

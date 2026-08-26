@@ -13,7 +13,7 @@ from iqpilot.selfdrive.ui.ui_state import ui_state
 
 _FPS_OVERRIDE = os.getenv("FPS")
 UI_OFFROAD_FPS = int(os.getenv("UI_OFFROAD_FPS", _FPS_OVERRIDE or "60"))
-UI_ONROAD_FPS = int(os.getenv("UI_ONROAD_FPS", _FPS_OVERRIDE or "20"))
+UI_ONROAD_FPS = int(os.getenv("UI_ONROAD_FPS", _FPS_OVERRIDE or "60"))
 
 
 def main():
