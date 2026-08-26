@@ -6,12 +6,14 @@ from iqdbc.car.honda.values import CAR as HONDA
 from iqdbc.car.toyota.values import CAR as TOYOTA
 from iqdbc.car.nissan.values import CAR as NISSAN
 from iqdbc.car.gm.values import CAR as GM
+from iqdbc.car.volkswagen.values import CAR as VOLKSWAGEN
 from iqdbc.car.vehicle_model import VehicleModel
 from iqpilot.common.realtime import DT_CTRL
 from iqpilot.selfdrive.car.helpers import convert_to_capnp
 from iqpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
 from iqpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from iqpilot.selfdrive.controls.lib.latcontrol_torque_pq import LatControlTorquePQ
+from iqpilot.selfdrive.controls.lib.latcontrol_torque_v0 import LatControlTorqueV0, is_vw_mqb_torque
 import iqpilot.selfdrive.controls.lib.latcontrol_torque_pq as latcontrol_torque_pq
 from iqpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle
 from iqpilot.selfdrive.locationd.helpers import Pose
@@ -31,7 +33,17 @@ class TestLatControl:
     iqpilot_interfaces.apply_iq_car_config(CI)
     return CP, LatControlTorquePQ(CP.as_reader(), convert_to_capnp(CP_IQ).as_reader(), CI, DT_CTRL)
 
-  @parameterized.expand([(HONDA.HONDA_CIVIC, LatControlPID), (TOYOTA.TOYOTA_RAV4, LatControlTorque),
+  @staticmethod
+  def build_v0_controller():
+    car_name = TOYOTA.TOYOTA_RAV4
+    CarInterface = interfaces[car_name]
+    CP = CarInterface.get_non_essential_params(car_name)
+    CP_IQ = CarInterface.get_non_essential_params_iq(CP, car_name)
+    CI = CarInterface(CP, CP_IQ)
+    iqpilot_interfaces.apply_iq_car_config(CI)
+    return CP, LatControlTorqueV0(CP.as_reader(), convert_to_capnp(CP_IQ).as_reader(), CI, DT_CTRL)
+
+  @parameterized.expand([(HONDA.HONDA_CIVIC, LatControlPID), (TOYOTA.TOYOTA_RAV4, LatControlTorque), (TOYOTA.TOYOTA_RAV4, LatControlTorqueV0),
                          (NISSAN.NISSAN_LEAF, LatControlAngle), (GM.CHEVROLET_BOLT_EUV, LatControlTorque)])
   def test_saturation(self, car_name, controller):
     CarInterface = interfaces[car_name]
@@ -77,6 +89,28 @@ class TestLatControl:
 
     _, _, lac_log = controller.update(True, CS, VM, params, False, 0.001, pose, False, 0.2)
     assert lac_log.active
+
+  def test_v0_uses_current_lateral_acceleration_setpoint(self):
+    CP, controller = self.build_v0_controller()
+    VM = VehicleModel(CP)
+    CS = car.CarState.new_message(vEgo=30)
+    params = log.VehicleParameters.new_message()
+    pose = Pose.from_live_pose(generate_deviceMotion().deviceMotion)
+
+    _, _, lac_log = controller.update(True, CS, VM, params, False, 0.001, pose, False, 0.3)
+
+    assert lac_log.version == 0
+    assert abs(lac_log.desiredLateralAccel - 0.9) < 1e-6
+
+  def test_v0_platform_selection(self):
+    mqb_interface = interfaces[VOLKSWAGEN.VOLKSWAGEN_PASSAT_MK8]
+    mqb_params = mqb_interface.get_non_essential_params(VOLKSWAGEN.VOLKSWAGEN_PASSAT_MK8)
+
+    assert is_vw_mqb_torque(mqb_params)
+    for car_name in (VOLKSWAGEN.VOLKSWAGEN_PASSAT_MK7, VOLKSWAGEN.VOLKSWAGEN_GOLF_MK8,
+                     VOLKSWAGEN.VOLKSWAGEN_ID4_MK1, VOLKSWAGEN.AUDI_A4_MK4, TOYOTA.TOYOTA_RAV4):
+      CarInterface = interfaces[car_name]
+      assert not is_vw_mqb_torque(CarInterface.get_non_essential_params(car_name))
 
   def test_pq_controller_inactive_lookahead_and_slew_reset(self):
     CP, controller = self.build_pq_controller()

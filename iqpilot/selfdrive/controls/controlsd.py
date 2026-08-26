@@ -22,6 +22,7 @@ from iqpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
 from iqpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle, STEER_ANGLE_SATURATION_THRESHOLD
 from iqpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from iqpilot.selfdrive.controls.lib.latcontrol_torque_pq import LatControlTorquePQ
+from iqpilot.selfdrive.controls.lib.latcontrol_torque_v0 import LatControlTorqueV0, is_vw_mqb_torque
 from iqpilot.selfdrive.controls.lib.longcontrol import LongControl
 from iqpilot.system.proprietary_runtime._verified_import import import_verified_module
 from iqpilot.selfdrive.locationd.helpers import PoseCalibrator, Pose
@@ -111,12 +112,20 @@ class Controls(IQControlsLayer):
     elif self.CP.lateralTuning.which() == 'pid':
       self.LaC = LatControlPID(self.CP, self.CP_IQ, self.CI, DT_CTRL)
     elif self.CP.lateralTuning.which() == 'torque':
-      self.LaC = LatControlTorque(self.CP, self.CP_IQ, self.CI, DT_CTRL)
       if self._use_pq_torque():
         try:
           self.LaC = LatControlTorquePQ(self.CP, self.CP_IQ, self.CI, DT_CTRL)
         except Exception:
           cloudlog.exception("LatControlTorquePQ init failed; using generic torque")
+          self.LaC = LatControlTorque(self.CP, self.CP_IQ, self.CI, DT_CTRL)
+      elif self._use_mqb_torque_v0():
+        try:
+          self.LaC = LatControlTorqueV0(self.CP, self.CP_IQ, self.CI, DT_CTRL)
+        except Exception:
+          cloudlog.exception("LatControlTorqueV0 init failed; using generic torque")
+          self.LaC = LatControlTorque(self.CP, self.CP_IQ, self.CI, DT_CTRL)
+      else:
+        self.LaC = LatControlTorque(self.CP, self.CP_IQ, self.CI, DT_CTRL)
 
   def _use_pq_torque(self) -> bool:
     try:
@@ -126,6 +135,13 @@ class Controls(IQControlsLayer):
       return bool(self.CP.flags & VolkswagenFlags.PQ)
     except Exception:
       cloudlog.exception("pq torque selection failed; using generic torque")
+      return False
+
+  def _use_mqb_torque_v0(self) -> bool:
+    try:
+      return is_vw_mqb_torque(self.CP)
+    except Exception:
+      cloudlog.exception("mqb torque v0 selection failed; using generic torque")
       return False
 
   def _update_params(self) -> None:
@@ -320,7 +336,7 @@ class Controls(IQControlsLayer):
       hudControl.leftLaneDepart = self.sm['driverAssistance'].leftLaneDeparture
       hudControl.rightLaneDepart = self.sm['driverAssistance'].rightLaneDeparture
 
-    if self.sm['selfdriveState'].active:
+    if CC.latActive:
       CO = self.sm['carOutput']
       if self.CP.steerControlType in (car.CarParams.SteerControlType.angle, car.CarParams.SteerControlType.curvatureDEPRECATED):
         self.steer_limited_by_safety = abs(CC.actuators.steeringAngleDeg - CO.actuatorsOutput.steeringAngleDeg) > \
