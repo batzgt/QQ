@@ -188,6 +188,11 @@ class MQBStandstillManager:
     self.prev_accel = accel
     return long_active, accel, stopping, starting, esp_starting_override, esp_stopping_override
 
+
+def accel_during_driver_override(accel: float, gas_pressed: bool, keep_long_active: bool) -> float:
+  return 0.0 if gas_pressed and keep_long_active else accel
+
+
 class CarController(CarControllerBase):
   def __init__(self, dbc_names, CP, CP_IQ):
     from iqpilot.system.proprietary_runtime._verified_import import import_verified_module
@@ -458,11 +463,8 @@ class CarController(CarControllerBase):
 
     if self.CP.flags & (VolkswagenFlags.MEB | VolkswagenFlags.MQB_EVO):
       if self.frame % 2 == 0:
-        blinker_active = CS.left_blinker_active or CS.right_blinker_active
-        left_blinker = CC.leftBlinker if not blinker_active else False
-        right_blinker = CC.rightBlinker if not blinker_active else False
         can_sends.append(self.CCS.create_blinker_control(self.packer_pt, self.CAN.pt, CS.ea_hud_stock_values, CS.ea_control_stock_values,
-                                                         left_blinker, right_blinker, self.hide_ea_error))
+                                                         CC.leftBlinker, CC.rightBlinker, self.hide_ea_error))
 
     if self.CP.openpilotLongitudinalControl and self.CCS in (mqbcan, mlbcan) and not self.acc_counter_seeded and CS.acc_stock_counters:
       seed_msgs = ("ACC_01", "ACC_02") if self.CCS is mlbcan else ("ACC_02", "ACC_06", "ACC_07", "ACC_10")
@@ -504,7 +506,7 @@ class CarController(CarControllerBase):
         stopping = actuators.longControlState == LongCtrlState.stopping
         starting = actuators.longControlState == LongCtrlState.pid and (CS.esp_hold_confirmation or CS.out.vEgo < 0.25)
         long_active = CC.longActive
-        accel = actuators.accel
+        accel = accel_during_driver_override(actuators.accel, CS.out.gasPressed, self.CP_IQ.longActiveWithGasOverride)
         esp_starting_override = None
         esp_stopping_override = None
 

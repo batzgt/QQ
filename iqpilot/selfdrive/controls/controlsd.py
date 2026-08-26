@@ -221,7 +221,7 @@ class Controls(IQControlsLayer):
       self.sm['iqNavState'] if self.sm.alive['iqNavState'] else None,
       self.navigation_enabled,
       self.nav_exit_lane_change,
-      CC.enabled and CC.latActive,
+      CC.latActive,
       CS.leftBlinker,
       CS.rightBlinker,
       CS.vEgo,
